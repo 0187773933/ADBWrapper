@@ -118,3 +118,12 @@ func ( w *Wrapper ) CurrentScreenSimilarityToReferenceImage( reference_image_pat
 	distance = image_similarity.CalculateDistances( current_screen_features , reference_image_features )
 	return
 }
+
+func ( w *Wrapper ) GetTopWindowInfo() ( results []string ) {
+	results = utils.GetTopWindowInfo()
+	// for i , line := range results {
+
+	// }
+	return
+}
+

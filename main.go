@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "fmt"
+	"fmt"
 	// "time"
 	adb "github.com/0187773933/ADBWrapper/v1/wrapper"
 )
@@ -24,6 +24,7 @@ func main() {
 	// adb.Tap( 500 , 50 )
 
 	// adb.Screenshot()
-	adb.CurrentScreenSimilarityToReferenceImage( "/Users/morpheous/WORKSPACE/GO/ADBWrapper/profile_selection.png" )
-	adb.CurrentScreenSimilarityToReferenceImage( "/Users/morpheous/WORKSPACE/GO/ADBWrapper/homescreen.png" )
+	// adb.CurrentScreenSimilarityToReferenceImage( "/Users/morpheous/WORKSPACE/GO/ADBWrapper/profile_selection.png" )
+	// adb.CurrentScreenSimilarityToReferenceImage( "/Users/morpheous/WORKSPACE/GO/ADBWrapper/homescreen.png" )
+	fmt.Println( adb.GetTopWindowInfo() )
 }
