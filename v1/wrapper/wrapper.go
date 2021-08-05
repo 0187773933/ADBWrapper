@@ -108,13 +108,13 @@ func ( w *Wrapper ) Screenshot() ( result string ) {
 // }
 
 
-func ( w *Wrapper ) CurrentScreenSimilarityToReferenceImage( reference_image_path string ) ( result float64 ) {
-	result = utils.ExecProcessWithTimeout( ( 1500 * time.Millisecond ) , "bash" , "-c" ,
+func ( w *Wrapper ) CurrentScreenSimilarityToReferenceImage( reference_image_path string ) ( distance float64 ) {
+	utils.ExecProcessWithTimeout( ( 1500 * time.Millisecond ) , "bash" , "-c" ,
 		"adb exec-out screencap -p > /tmp/adb_screenshot_4524124.png" ,
 	)
 	time.Sleep( 1500 * time.Millisecond )
 	current_screen_features := image_similarity.GetFeatureVector( "/tmp/adb_screenshot_4524124.png" )
 	reference_image_features := image_similarity.GetFeatureVector( reference_image_path )
-	result = image_similarity.CalculateDistances( current_screen_features , reference_image_features )
+	distance = image_similarity.CalculateDistances( current_screen_features , reference_image_features )
 	return
 }
