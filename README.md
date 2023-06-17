@@ -1,5 +1,7 @@
 <center><h1>ADB Wrapper</h1></center>
 
+- apk's === arm-v7a , Android 5.0+
+
 ## ADB Info Links
 - https://gist.github.com/mcfrojd/9e6875e1db5c089b1e3ddeb7dba0f304
 - https://stackoverflow.com/questions/12698814/get-launchable-activity-name-of-package-from-adb
@@ -25,7 +27,7 @@
 - https://stackoverflow.com/questions/27988069/query-android-content-provider-from-command-line-adb-shell
 - https://stackoverflow.com/questions/27391326/how-to-change-the-volume-using-adb-shell-service-call-audio#27392847
 - https://www.androidauthority.com/about-android-debug-bridge-adb-21510/
-
+- https://www.apkmirror.com/apk/instagram/instagram-instagram/instagram-instagram-201-0-0-0-29-release/instagram-201-0-0-0-29-android-apk-download/download/#uploadAPK
 
 ## ADB Code Examples
 - https://github.com/ceberous/ShzmTwitchBot/blob/master/main.js
@@ -86,6 +88,8 @@
 - `adb shell service call audio 3 i32 3 i32 0 i32`
 
 - `adb exec-out screencap -p > test.png`
+
+- `adb install instagram.apk`
 
 
 ## Get Info

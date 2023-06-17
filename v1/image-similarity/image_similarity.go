@@ -95,7 +95,7 @@ func GetFeatureVector( image_path string ) ( features []float64 ) {
 }
 
 
-
+// https://stats.stackexchange.com/questions/470720/why-is-it-called-chi2-distance-kernel#471093
 func chi2Distance(v1, v2 []float64) float64 {
 	d := 0.
 	min := int(math.Min(float64(len(v1)), float64(len(v2))))
@@ -108,16 +108,7 @@ func chi2Distance(v1, v2 []float64) float64 {
 	return d * 0.5
 }
 
-func CalculateDistances( reference_image_features []float64 , test_image_features []float64 ) ( result float64 ) {
-	// distanceChannel := make(chan *ImageDistance, 20)
-	// defer close(distanceChannel)
-
-	// availableCores := float64(runtime.NumCPU())
-	// logLen := math.Ceil(math.Log10(float64(len(images))))
-	// routineCount := int(math.Min(logLen, availableCores))
-	// if routineCount == 0 { routineCount = 1 }
-	// routineCalculationRange := len(images) / routineCount
-
+func CalculateDistance( reference_image_features []float64 , test_image_features []float64 ) ( result float64 ) {
 	result = chi2Distance( reference_image_features , test_image_features )
 	return
 }
