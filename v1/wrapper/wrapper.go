@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"time"
 	"fmt"
+	"image"
 	"sync"
 	"os"
 	"context"
@@ -19,7 +20,7 @@ import (
 	// "unsafe"
 	// "image"
 	_ "image/jpeg"
-	_ "image/png"
+	"image/png"
 	// "bytes"
 	utils "github.com/0187773933/ADBWrapper/v1/utils"
 	image_similarity "github.com/0187773933/ADBWrapper/v1/image-similarity"
@@ -128,7 +129,7 @@ func ( w *Wrapper ) GetEventDevices() ( results []string ) {
 // https://github.com/imba28/image-similarity/blob/6f921fdf4f5ab8b37d4d563684de99601cc88d5b/pkg/index.go#L10
 // https://github.com/imba28/image-similarity/blob/6f921fdf4f5ab8b37d4d563684de99601cc88d5b/pkg/descriptor.go#L16
 // https://github.com/hybridgroup/gocv/blob/e11806566cdf2482485cc90d92ed320fa920e91a/cmd/img-similarity/main.go#L123
-func ( w *Wrapper ) Screenshot( save_path string ) ( result string ) {
+func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string ) {
 	if save_path == "" {
 		temp_dir := os.TempDir()
 		save_path = filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
@@ -136,6 +137,25 @@ func ( w *Wrapper ) Screenshot( save_path string ) ( result string ) {
 	result = utils.ExecProcessWithTimeout( ( 1500 * time.Millisecond ) , "bash" , "-c" ,
 		fmt.Sprintf( "adb exec-out screencap -p > %s" , save_path ) ,
 	)
+
+	// Crop if bounding-box is present
+	if len( crop ) == 4 {
+		// x1 , y1 , x2 , y2 := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
+		x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
+		crop_file , crop_file_err := os.Open( save_path )
+		if crop_file_err != nil { fmt.Println( crop_file_err ); return }
+		defer crop_file.Close()
+		crop_img_src , crop_img_src_err := png.Decode( crop_file )
+		if crop_file_err != nil { fmt.Println( crop_img_src_err ); return }
+		// crop_img := crop_img_src.(*image.NRGBA).SubImage(image.Rect(x1, y1, x2, y2)).(*image.NRGBA)
+		crop_img := crop_img_src.(*image.NRGBA).SubImage(image.Rect(x1, y1, x1+width, y1+height)).(*image.NRGBA)
+		crop_img_out_file , crop_img_out_file_err := os.Create( save_path )
+		if crop_file_err != nil { fmt.Println( crop_img_out_file_err ); return }
+		defer crop_img_out_file.Close()
+		encode_err := png.Encode( crop_img_out_file , crop_img )
+		if encode_err != nil { fmt.Println( encode_err ); return }
+	}
+
 	return
 }
 
@@ -168,7 +188,7 @@ func ( w *Wrapper ) Screenshot( save_path string ) ( result string ) {
 // 	return
 // }
 
-func ( w *Wrapper ) get_current_screen_features() ( features []float64 ) {
+func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []float64 ) {
 	try.This(func() {
 		temp_dir := os.TempDir()
 		temp_save_path := filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
@@ -197,16 +217,33 @@ func ( w *Wrapper ) get_current_screen_features() ( features []float64 ) {
 			time.Sleep( 10 * time.Millisecond )
 		}
 
+		// Crop if bounding-box is present
+		if len( crop ) == 4 {
+			// x1 , y1 , x2 , y2 := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
+			x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
+			crop_file , crop_file_err := os.Open( temp_save_path )
+			if crop_file_err != nil { fmt.Println( crop_file_err ); return }
+			defer crop_file.Close()
+			crop_img_src , crop_img_src_err := png.Decode( crop_file )
+			if crop_file_err != nil { fmt.Println( crop_img_src_err ); return }
+			// crop_img := crop_img_src.(*image.NRGBA).SubImage(image.Rect(x1, y1, x2, y2)).(*image.NRGBA)
+			crop_img := crop_img_src.(*image.NRGBA).SubImage(image.Rect(x1, y1, x1+width, y1+height)).(*image.NRGBA)
+			crop_img_out_file , crop_img_out_file_err := os.Create( temp_save_path )
+			if crop_file_err != nil { fmt.Println( crop_img_out_file_err ); return }
+			defer crop_img_out_file.Close()
+			encode_err := png.Encode( crop_img_out_file , crop_img )
+			if encode_err != nil { fmt.Println( encode_err ); return }
+		}
+
 		features = image_similarity.GetFeatureVector( temp_save_path )
 	}).Catch( func( e try.E ) {
 		fmt.Println( e )
 	})
 	return
 }
-
-func ( w *Wrapper ) current_screen_similarity_to_reference_image( reference_image_path string ) ( distance float64 ) {
+func ( w *Wrapper ) current_screen_similarity_to_reference_image( reference_image_path string , crop ...int ) ( distance float64 ) {
 	try.This(func() {
-		current_screen_features := w.get_current_screen_features()
+		current_screen_features := w.get_current_screen_features( crop... )
 		reference_image_features := image_similarity.GetFeatureVector( reference_image_path )
 		distance = image_similarity.CalculateDistance( current_screen_features , reference_image_features )
 	}).Catch( func( e try.E ) {
@@ -226,8 +263,8 @@ func ( w *Wrapper ) similarity_to_feature_list( features []float64 , reference_i
 	return
 }
 
-func ( w *Wrapper ) IsSameScreen( reference_image_path string ) ( result bool ) {
-	distance := w.current_screen_similarity_to_reference_image( reference_image_path )
+func ( w *Wrapper ) IsSameScreen( reference_image_path string , crop ...int ) ( result bool ) {
+	distance := w.current_screen_similarity_to_reference_image( reference_image_path , crop... )
 	// fmt.Println( distance )
 	if distance > IMAGE_SIMILARITY_THRESHOLD {
 		result = false
@@ -237,7 +274,18 @@ func ( w *Wrapper ) IsSameScreen( reference_image_path string ) ( result bool ) 
 	return
 }
 
-func ( w *Wrapper ) WaitOnScreen( reference_image_path string , timeout time.Duration ) ( result bool ) {
+func ( w *Wrapper ) IsSameScreenV2( reference_image_path string , crop ...int ) ( result bool , distance float64 ) {
+	distance = w.current_screen_similarity_to_reference_image( reference_image_path , crop... )
+	// fmt.Println( distance )
+	if distance > IMAGE_SIMILARITY_THRESHOLD {
+		result = false
+	} else {
+		result = true
+	}
+	return
+}
+
+func ( w *Wrapper ) WaitOnScreen( reference_image_path string , timeout time.Duration , crop ...int ) ( result bool ) {
 	done := make(chan bool, 1)
 
 	// Create a timer that will send a message on its channel after the timeout
@@ -251,7 +299,7 @@ func ( w *Wrapper ) WaitOnScreen( reference_image_path string , timeout time.Dur
 			select {
 			// When the ticker ticks, call adb.IsSameScreen
 			case <-ticker.C:
-				if w.IsSameScreen(reference_image_path) {
+				if w.IsSameScreen( reference_image_path , crop... ) {
 					done <- true
 					return
 				}
@@ -278,10 +326,10 @@ type ScreenHit struct {
 	Path     string
 	Distance float64
 }
-func ( w *Wrapper ) ClosestScreen( reference_image_path_directory string ) ( result string ) {
+func ( w *Wrapper ) ClosestScreen( reference_image_path_directory string , crop ...int ) ( result string ) {
 	files , _ := os.ReadDir( reference_image_path_directory )
 
-	current_screen_features := w.get_current_screen_features()
+	current_screen_features := w.get_current_screen_features( crop... )
 
 	// Prepare the WaitGroup , semaphore , and context
 	total_concurrent := 5
