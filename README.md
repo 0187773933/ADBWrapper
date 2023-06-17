@@ -2,6 +2,10 @@
 
 - apk's === arm-v7a , Android 5.0+
 
+## TODO
+
+- add cropping to screen compare
+
 ## ADB Info Links
 - https://gist.github.com/mcfrojd/9e6875e1db5c089b1e3ddeb7dba0f304
 - https://stackoverflow.com/questions/12698814/get-launchable-activity-name-of-package-from-adb
@@ -98,6 +102,7 @@
 - `adb shell dumpsys media_session | grep "state=PlaybackState"`
 - `adb shell dumpsys media_session`
 - `adb shell content query --uri content://call_log/calls`
+- `adb shell getevent -il`
 
 ## Twitch
 
