@@ -92,7 +92,6 @@ func ( w *Wrapper ) PressKey( key_number int ) ( result string ) {
 	return
 }
 
-// Doesn't Work
 // https://ktnr74.blogspot.com/2013/06/emulating-touchscreen-interaction-with.html
 func ( w *Wrapper ) Swipe( start_x int , start_y int , stop_x int , stop_y int ) ( result string ) {
 	result = w.Exec( "shell" , "input" , "swipe" , strconv.Itoa( start_x ) , strconv.Itoa( start_y ) , strconv.Itoa( stop_x ) , strconv.Itoa( stop_y ) , strconv.Itoa( 100 ) )

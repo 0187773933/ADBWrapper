@@ -4,7 +4,8 @@
 
 ## TODO
 
-- add cropping to screen compare
+- better current state meta info
+- wrap in server?
 
 ## ADB Info Links
 - https://gist.github.com/mcfrojd/9e6875e1db5c089b1e3ddeb7dba0f304
