@@ -62,5 +62,7 @@ func main() {
 	// Rect(xMin, yMin, xMax, yMax)
 	// but we changed it to be ( x , y , width , height )
 	// adb.Screenshot( "screenshots/test_crop.png" , 28 , 337 , 188 , 115 )
-	fmt.Println( adb.IsSameScreenV2( "screenshots/test_crop.png" , 28 , 337 , 188 , 115 ) )
+	// fmt.Println( adb.IsSameScreenV2( "screenshots/test_crop.png" , 28 , 337 , 188 , 115 ) )
+	adb.WaitOnScreen( "screenshots/test_crop.png" , ( 30 * time.Second ) , 28 , 337 , 188 , 115 )
+	fmt.Println( "found" )
 }
