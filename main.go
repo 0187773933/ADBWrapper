@@ -28,16 +28,28 @@ func example_disney_plus_sign_in( adb *adb_wrapper.Wrapper ) {
 }
 
 func example_spotify_play_playlist( adb *adb_wrapper.Wrapper ) {
-	fmt.Println( adb.Exec( "shell" , "dumpsys" , "media_session" ) )
+
+	// fmt.Println( adb.Exec( "shell" , "dumpsys" , "media_session" ) )
+	adb.CloseAppName( "com.spotify.music" )
+	time.Sleep( 1 * time.Second )
+	adb.Shell( "am" , "start" , "-n" , "com.spotify.music/com.spotify.music.MainActivity" )
+	time.Sleep( 10 * time.Second )
 	adb.OpenURI( "spotify:playlist:46CkdOm6pd6tsREVoIgZWw:play" )
-	time.Sleep( 1000 * time.Millisecond )
-	adb.PressButtonSequence( 21 , 21 , 23 )
-	time.Sleep( 1000 * time.Millisecond )
-	adb.PressButtonSequence( 22 , 22 , 22 )
-	time.Sleep( 400 * time.Millisecond )
-	adb.PressButtonSequence( 23 )
-	time.Sleep( 2000 * time.Millisecond )
-	adb.Tap( 500 , 50 )
+	time.Sleep( 1 * time.Second )
+	adb.PressKeyName( "KEYCODE_MEDIA_PLAY" )
+
+	// time.Sleep( 1000 * time.Millisecond )
+	// adb.PressButtonSequence( 21 , 21 , 23 )
+	// time.Sleep( 1000 * time.Millisecond )
+	// adb.PressButtonSequence( 22 , 22 , 22 )
+	// time.Sleep( 400 * time.Millisecond )
+	// adb.PressButtonSequence( 23 )
+	// time.Sleep( 2000 * time.Millisecond )
+	// adb.Tap( 500 , 50 )
+
+	// adb.SetVolumePercent( 70 )
+	adb.SetVolumePercent( 56 )
+	// adb.SetVolume( 15 )
 }
 
 // brew install opencv@4
@@ -75,7 +87,14 @@ func main() {
 		adb.PlaybackEvents( "unlock.json" )
 	}
 	// adb.SaveEvents( "unlock.json" )
+
 	// fmt.Println( adb.GetTopWindowInfo() )
+
+	example_spotify_play_playlist( &adb )
+
+	// black-screen
+	// adb.Screenshot( "spotify-login.png" )
+
 
 	// screenshots/disney_login.png: PNG image data, 1024 x 600, 8-bit/color RGBA, non-interlaced
 	// Rect(xMin, yMin, xMax, yMax)

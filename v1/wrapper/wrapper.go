@@ -99,17 +99,47 @@ func ( w *Wrapper ) GetScreenState() ( result bool ) {
 	return
 }
 
-func ( w *Wrapper )  ScreenOn() () {
+func ( w *Wrapper )  ScreenOn() {
 	w.Screen = w.GetScreenState()
 	if w.Screen == true { return; }
 	fmt.Println( w.PressKey( 26 ) )
 }
 
-func ( w *Wrapper )  ScreenOff() () {
+func ( w *Wrapper ) ScreenOff() {
 	w.Screen = w.GetScreenState()
 	if w.Screen == false { return; }
 	fmt.Println( w.PressKey( 26 ) )
 }
+
+func ( w *Wrapper ) SetVolume( level int ) {
+	w.Shell( "media" , "volume" , "--stream" , "3" , "--set" , strconv.Itoa( level ) )
+}
+
+func (w *Wrapper) SetVolumePercent(percent int) {
+	output := w.Shell("media", "volume", "--stream", "3", "--get")
+	re := regexp.MustCompile(`volume is (\d+) in range \[(\d+)\.\.(\d+)\]`)
+	matches := re.FindStringSubmatch(output)
+	if len(matches) != 4 {
+		fmt.Println("Failed to parse volume information")
+		return
+	}
+
+	// Parse the current volume and range
+	currentVolume, _ := strconv.Atoi(matches[1])
+	minVolume, _ := strconv.Atoi(matches[2])
+	maxVolume, _ := strconv.Atoi(matches[3])
+
+	fmt.Printf("Current volume: %d, Min volume: %d, Max volume: %d\n", currentVolume, minVolume, maxVolume)
+
+	// Calculate the desired volume based on the percentage
+	desiredVolume := minVolume + (maxVolume-minVolume)*percent/100
+
+	// Set the volume
+	fmt.Printf("Setting volume to %d\n", desiredVolume)
+	w.Shell("media", "volume", "--stream", "3", "--set", strconv.Itoa(desiredVolume))
+}
+
+
 
 func ( w *Wrapper )  GetTopWindowInfo() ( lines []string ) {
 	result := w.Shell( "dumpsys" , "window" , "windows" )
@@ -185,6 +215,12 @@ func ( w *Wrapper ) OpenAppName( app_name string ) ( result string ) {
 	return
 }
 
+func ( w *Wrapper ) CloseAppName( app_name string ) ( result string ) {
+	result = w.Shell( "am", "force-stop", app_name )
+	// fmt.Println( result )
+	return
+}
+
 func ( w *Wrapper ) PressButtonSequence( buttons ...int ) ( result string ) {
 	sequence_string := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(buttons)), " " ), "[]")
 	result = w.Shell( "input" , "keyevent" , sequence_string )
@@ -200,6 +236,12 @@ func ( w *Wrapper ) PressKey( key_number int ) ( result string ) {
 	result = w.Shell( "input" , "keyevent" , strconv.Itoa( key_number ) )
 	return
 }
+
+func ( w *Wrapper ) PressKeyName( key_name string ) ( result string ) {
+	result = w.Shell( "input" , "keyevent" , key_name )
+	return
+}
+
 
 // https://ktnr74.blogspot.com/2013/06/emulating-touchscreen-interaction-with.html
 func ( w *Wrapper ) Swipe( start_x int , start_y int , stop_x int , stop_y int ) ( result string ) {
@@ -226,9 +268,16 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 		temp_dir := os.TempDir()
 		save_path = filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
 	}
-	result = utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
-		fmt.Sprintf( "adb exec-out screencap -p > %s" , save_path ) ,
-	)
+	// args := []string{"-s", w.Serial, "exec-out", "screencap", "-p"}
+	// command := exec.Command(w.ADBPath, args...)
+	// output, err := command.Output()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// err = ioutil.WriteFile(save_path, output, 0644)
+	cmd_str := fmt.Sprintf( "%s -s %s exec-out screencap -p > %s", w.ADBPath, w.Serial, save_path)
+	cmd := exec.Command( "bash", "-c", cmd_str )
+	cmd.Run()
 
 	// Crop if bounding-box is present
 	if len( crop ) == 4 {
@@ -285,7 +334,7 @@ func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []floa
 		temp_dir := os.TempDir()
 		temp_save_path := filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
 		utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
-			fmt.Sprintf( "adb exec-out screencap -p > %s" , temp_save_path ) ,
+			fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , temp_save_path ) ,
 		)
 
 		// Option 1 - Just Wait the full 1.5 seconds
@@ -412,7 +461,6 @@ func ( w *Wrapper ) WaitOnScreen( reference_image_path string , timeout time.Dur
 
 	return
 }
-
 
 type ScreenHit struct {
 	Path     string
