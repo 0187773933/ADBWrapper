@@ -103,60 +103,6 @@ func ExecProcessWithTimeoutAndGetOutputLines( timeout_duration time.Duration , b
 	return
 }
 
-func GetTopWindowInfo() ( lines []string ) {
-	command := exec.Command( "bash" , "-c" , "adb shell dumpsys window windows" )
-	var outb , errb bytes.Buffer
-	command.Stdout = &outb
-	command.Stderr = &errb
-	command.Start()
-	time.AfterFunc( ( 1500 * time.Millisecond ) , func() {
-		command.Process.Signal( syscall.SIGTERM )
-	})
-	command.Wait()
-	result := outb.String()
-	start := strings.Split( result , "Window #1" )[ 1 ]
-	middle := strings.Split( start , "Window #2" )[ 0 ]
-	non_empty_lines := strings.Replace( middle , "\n\n" , "\n" , -1 )
-	lines = strings.Split( non_empty_lines , "\n" )
-	return
-}
-
-// type EventDevice struct {
-// 	DevicePath string
-// 	Bus        string
-// 	Vendor     string
-// 	Product    string
-// 	Version    string
-// 	Name       string
-// 	Location   string
-// 	ID         string
-// 	Events     string
-// 	Props      string
-// }
-// just run === adb shell getevent -il
-// to find you device name and events and stuff
-// http://ktnr74.blogspot.com/2013/06/emulating-touchscreen-interaction-with.html
-func GetEventDevices() ( lines []string ) {
-	command := exec.Command( "bash" , "-c" , "adb shell getevent -il" )
-	var outb , errb bytes.Buffer
-	command.Stdout = &outb
-	command.Stderr = &errb
-	command.Start()
-	time.AfterFunc( ( 1500 * time.Millisecond ) , func() {
-		command.Process.Signal( syscall.SIGTERM )
-	})
-	command.Wait()
-	result := outb.String()
-	non_empty_lines := strings.Replace( result , "\n\n" , "\n" , -1 )
-	lines = strings.Split( non_empty_lines , "\n" )
-	// start := strings.Split( result , "Window #1" )[ 1 ]
-	// middle := strings.Split( start , "Window #2" )[ 0 ]
-	// non_empty_lines := strings.Replace( middle , "\n\n" , "\n" , -1 )
-	// lines = strings.Split( non_empty_lines , "\n" )
-	return
-}
-
-
 func ExecProcessAndGetOutputLines( bash_command string , arguments ...string ) ( lines []string ) {
 	command := exec.Command( bash_command , arguments... )
 	out , _ := command.Output()

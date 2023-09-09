@@ -55,7 +55,26 @@ func main() {
 		"/usr/local/bin/adb" ,
 		"GCC0X8081307034C" ,
 	)
-	fmt.Println( "Connected" , time.Second )
+
+	// force screen wakeup and unlock
+	adb.ScreenOn()
+	fmt.Println( adb.Screen )
+	screen_was_off := true
+	if adb.Screen == false {
+		time.Sleep( 1 * time.Second )
+		adb.ScreenOn()
+		fmt.Println( adb.Screen )
+		if adb.Screen == false {
+			time.Sleep( 1 * time.Second )
+			adb.ScreenOn()
+			fmt.Println( adb.Screen )
+		}
+	} else { screen_was_off = false }
+	fmt.Println( "Connected , Screen On ===" , adb.Screen , " , Screen Was Off ===" , screen_was_off )
+	if screen_was_off == true {
+		adb.PlaybackEvents( "unlock.json" )
+	}
+	// adb.SaveEvents( "unlock.json" )
 	// fmt.Println( adb.GetTopWindowInfo() )
 
 	// screenshots/disney_login.png: PNG image data, 1024 x 600, 8-bit/color RGBA, non-interlaced
@@ -63,6 +82,7 @@ func main() {
 	// but we changed it to be ( x , y , width , height )
 	// adb.Screenshot( "screenshots/test_crop.png" , 28 , 337 , 188 , 115 )
 	// fmt.Println( adb.IsSameScreenV2( "screenshots/test_crop.png" , 28 , 337 , 188 , 115 ) )
-	adb.WaitOnScreen( "screenshots/test_crop.png" , ( 30 * time.Second ) , 28 , 337 , 188 , 115 )
-	fmt.Println( "found" )
+
+	// adb.WaitOnScreen( "screenshots/test_crop.png" , ( 30 * time.Second ) , 28 , 337 , 188 , 115 )
+	// fmt.Println( "found" )
 }

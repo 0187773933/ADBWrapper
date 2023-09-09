@@ -1,0 +1,704 @@
+[
+ [
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 57,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.1808-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 35,
+   "Time": "2023-09-09T13:30:54.180805-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 525,
+   "Time": "2023-09-09T13:30:54.180812-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 48,
+   "ValueDec": 24,
+   "Time": "2023-09-09T13:30:54.180819-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 50,
+   "ValueDec": 24,
+   "Time": "2023-09-09T13:30:54.18082-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180827-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 36,
+   "Time": "2023-09-09T13:30:54.180829-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 524,
+   "Time": "2023-09-09T13:30:54.18083-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180832-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 47,
+   "Time": "2023-09-09T13:30:54.180838-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 522,
+   "Time": "2023-09-09T13:30:54.18084-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180841-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 63,
+   "Time": "2023-09-09T13:30:54.180843-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 521,
+   "Time": "2023-09-09T13:30:54.180845-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180846-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 83,
+   "Time": "2023-09-09T13:30:54.180848-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180849-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 96,
+   "Time": "2023-09-09T13:30:54.18086-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180861-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 106,
+   "Time": "2023-09-09T13:30:54.180863-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180864-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 114,
+   "Time": "2023-09-09T13:30:54.180866-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 520,
+   "Time": "2023-09-09T13:30:54.180867-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180869-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 122,
+   "Time": "2023-09-09T13:30:54.180871-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 519,
+   "Time": "2023-09-09T13:30:54.180872-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180874-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 129,
+   "Time": "2023-09-09T13:30:54.180875-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 518,
+   "Time": "2023-09-09T13:30:54.180877-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180878-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 134,
+   "Time": "2023-09-09T13:30:54.180879-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180881-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 139,
+   "Time": "2023-09-09T13:30:54.180882-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 517,
+   "Time": "2023-09-09T13:30:54.180889-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180891-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 142,
+   "Time": "2023-09-09T13:30:54.180892-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180894-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 145,
+   "Time": "2023-09-09T13:30:54.180895-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180897-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 148,
+   "Time": "2023-09-09T13:30:54.180898-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 516,
+   "Time": "2023-09-09T13:30:54.1809-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180901-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 151,
+   "Time": "2023-09-09T13:30:54.180903-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180904-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 156,
+   "Time": "2023-09-09T13:30:54.180906-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 515,
+   "Time": "2023-09-09T13:30:54.180908-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180909-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 159,
+   "Time": "2023-09-09T13:30:54.180911-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180912-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 163,
+   "Time": "2023-09-09T13:30:54.180914-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180919-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 167,
+   "Time": "2023-09-09T13:30:54.180923-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180924-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 172,
+   "Time": "2023-09-09T13:30:54.180926-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 517,
+   "Time": "2023-09-09T13:30:54.180927-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180929-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 177,
+   "Time": "2023-09-09T13:30:54.18093-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 518,
+   "Time": "2023-09-09T13:30:54.180932-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180933-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 183,
+   "Time": "2023-09-09T13:30:54.180935-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180936-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 189,
+   "Time": "2023-09-09T13:30:54.180938-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 516,
+   "Time": "2023-09-09T13:30:54.18094-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180941-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 197,
+   "Time": "2023-09-09T13:30:54.180943-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 513,
+   "Time": "2023-09-09T13:30:54.180944-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180946-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 204,
+   "Time": "2023-09-09T13:30:54.180947-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 510,
+   "Time": "2023-09-09T13:30:54.180949-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.18095-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 211,
+   "Time": "2023-09-09T13:30:54.180952-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 505,
+   "Time": "2023-09-09T13:30:54.180953-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180955-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 216,
+   "Time": "2023-09-09T13:30:54.180956-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 497,
+   "Time": "2023-09-09T13:30:54.180966-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180967-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 223,
+   "Time": "2023-09-09T13:30:54.180969-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 490,
+   "Time": "2023-09-09T13:30:54.180971-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180972-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 228,
+   "Time": "2023-09-09T13:30:54.180974-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 483,
+   "Time": "2023-09-09T13:30:54.180975-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180977-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 232,
+   "Time": "2023-09-09T13:30:54.180979-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 476,
+   "Time": "2023-09-09T13:30:54.18098-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180985-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 239,
+   "Time": "2023-09-09T13:30:54.180986-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 466,
+   "Time": "2023-09-09T13:30:54.180988-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180989-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 243,
+   "Time": "2023-09-09T13:30:54.180991-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 458,
+   "Time": "2023-09-09T13:30:54.180992-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180994-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 250,
+   "Time": "2023-09-09T13:30:54.180996-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 448,
+   "Time": "2023-09-09T13:30:54.180997-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.180999-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 258,
+   "Time": "2023-09-09T13:30:54.181-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 439,
+   "Time": "2023-09-09T13:30:54.181002-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.181004-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 53,
+   "ValueDec": 264,
+   "Time": "2023-09-09T13:30:54.181005-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 3,
+   "CodeDec": 54,
+   "ValueDec": 430,
+   "Time": "2023-09-09T13:30:54.181007-04:00"
+  },
+  {
+   "EventNum": 2,
+   "TypeDec": 0,
+   "CodeDec": 0,
+   "ValueDec": 0,
+   "Time": "2023-09-09T13:30:54.181008-04:00"
+  }
+ ]
+]

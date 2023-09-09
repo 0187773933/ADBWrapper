@@ -6,9 +6,11 @@ import (
 	"regexp"
 	"bufio"
 	"time"
+	"math/rand"
 	"fmt"
 	"image"
 	"sync"
+	"sort"
 	"os"
 	"context"
 	"syscall"
@@ -30,19 +32,19 @@ import (
 
 const IMAGE_SIMILARITY_THRESHOLD float64 = 1.5
 const PAUSE_THRESHOLD = ( 500 * time.Millisecond )
+const EXEC_TIMEOUT = ( 1500 * time.Millisecond )
 
 type Wrapper struct {
 	ADBPath string `json:"adb_path"`
-	HostIP string `json:"host_ip"`
-	HostPort string `json:"host_port"`
+	Serial string `json:"serial"`
 	Connected bool `json:"connected"`
+	Screen bool `json:"screen_on"`
 }
 
 func ConnectIP( adb_path string , host_ip string , host_port string ) ( wrapper Wrapper ) {
 	wrapper.ADBPath = adb_path
-	wrapper.HostIP = host_ip
-	wrapper.HostPort = host_port
-	connection_result := utils.ExecProcessWithTimeout( ( 1500 * time.Millisecond ) , adb_path , "connect" , host_ip )
+	wrapper.Serial = host_ip + ":" + host_port
+	connection_result := utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , adb_path , "connect" , host_ip )
 	if strings.Contains( connection_result , "already connected" ) {
 		wrapper.Connected = true
 	} else if strings.Contains( connection_result , "failed to connect" ) {
@@ -50,75 +52,166 @@ func ConnectIP( adb_path string , host_ip string , host_port string ) ( wrapper 
 	} else if len( strings.TrimSpace( connection_result ) ) == 0 {
 		wrapper.Connected = false
 	}
+	// if force_screen_on == true { wrapper.ScreenOn() }
 	return
 }
 
 func ConnectUSB( adb_path string , serial string ) ( wrapper Wrapper ) {
 	wrapper.ADBPath = adb_path
+	wrapper.Serial = serial
 	wrapper.Connected = true
+	// if force_screen_on == true { wrapper.ScreenOn() }
 	return
 }
 
 func ( w *Wrapper ) Exec( arguments ...string ) ( result string ) {
-	result = utils.ExecProcessWithTimeout( ( 1500 * time.Millisecond ) , w.ADBPath , arguments... )
+	args := append( []string{ "-s" , w.Serial } , arguments... )
+	result = utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , w.ADBPath , args... )
 	return
 }
 
+func ( w *Wrapper ) Shell( arguments ...string ) ( result string ) {
+	args := append( []string{ "-s" , w.Serial , "shell" } , arguments... )
+	result = utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , w.ADBPath , args... )
+	return
+}
+
+func ( w *Wrapper ) GetScreenState() ( result bool ) {
+	// Display Power: state=OFF
+	x := w.Shell( "dumpsys" , "power" )
+	lines := strings.Split( x , "\n" )
+	for _ , line := range lines {
+		if strings.Contains( line , "Display Power: state=" ) {
+			parts := strings.Split( strings.TrimSpace( line ) , "state=" )
+			if len( parts ) < 1 { break; }
+			state := strings.TrimSpace( parts[ 1 ] )
+			switch state {
+				case "ON":
+					result = true
+					break;
+				case "OFF":
+					result = false
+					break;
+			}
+			break
+		}
+	}
+	return
+}
+
+func ( w *Wrapper )  ScreenOn() () {
+	w.Screen = w.GetScreenState()
+	if w.Screen == true { return; }
+	fmt.Println( w.PressKey( 26 ) )
+}
+
+func ( w *Wrapper )  ScreenOff() () {
+	w.Screen = w.GetScreenState()
+	if w.Screen == false { return; }
+	fmt.Println( w.PressKey( 26 ) )
+}
+
+func ( w *Wrapper )  GetTopWindowInfo() ( lines []string ) {
+	result := w.Shell( "dumpsys" , "window" , "windows" )
+	fmt.Println( result )
+	// command := exec.Command( "bash" , "-c" , "adb shell dumpsys window windows" )
+	// var outb , errb bytes.Buffer
+	// command.Stdout = &outb
+	// command.Stderr = &errb
+	// command.Start()
+	// time.AfterFunc( ( EXEC_TIMEOUT * time.Millisecond ) , func() {
+	// 	command.Process.Signal( syscall.SIGTERM )
+	// })
+	// command.Wait()
+	// result := outb.String()
+	// start := strings.Split( result , "Window #1" )[ 1 ]
+	// middle := strings.Split( start , "Window #2" )[ 0 ]
+	// non_empty_lines := strings.Replace( middle , "\n\n" , "\n" , -1 )
+	// lines = strings.Split( non_empty_lines , "\n" )
+	return
+}
+
+// type EventDevice struct {
+// 	DevicePath string
+// 	Bus        string
+// 	Vendor     string
+// 	Product    string
+// 	Version    string
+// 	Name       string
+// 	Location   string
+// 	ID         string
+// 	Events     string
+// 	Props      string
+// }
+// just run === adb shell getevent -il
+// to find you device name and events and stuff
+// http://ktnr74.blogspot.com/2013/06/emulating-touchscreen-interaction-with.html
+func ( w *Wrapper ) GetEventDevices() ( lines []string ) {
+
+	result := w.Shell( "getevent" , "-il" )
+	fmt.Println( result )
+
+	// TODO , finish moving this from utils to here for ( w *Wrapper ) context
+	// command := exec.Command( "bash" , "-c" , "adb shell getevent -il" )
+	// var outb , errb bytes.Buffer
+	// command.Stdout = &outb
+	// command.Stderr = &errb
+	// command.Start()
+	// time.AfterFunc( ( EXEC_TIMEOUT * time.Millisecond ) , func() {
+	// 	command.Process.Signal( syscall.SIGTERM )
+	// })
+	// command.Wait()
+	// result := outb.String()
+	// non_empty_lines := strings.Replace( result , "\n\n" , "\n" , -1 )
+	// lines = strings.Split( non_empty_lines , "\n" )
+
+	// start := strings.Split( result , "Window #1" )[ 1 ]
+	// middle := strings.Split( start , "Window #2" )[ 0 ]
+	// non_empty_lines := strings.Replace( middle , "\n\n" , "\n" , -1 )
+	// lines = strings.Split( non_empty_lines , "\n" )
+	return
+}
+
+
 func ( w *Wrapper ) OpenURI( uri string ) ( result string ) {
-	result = w.Exec( "shell" , "am" , "start" , "-a" , "android.intent.action.VIEW" , "-d" , uri )
+	result = w.Shell( "am" , "start" , "-a" , "android.intent.action.VIEW" , "-d" , uri )
 	return
 }
 
 // adb shell pm list packages
 func ( w *Wrapper ) OpenAppName( app_name string ) ( result string ) {
-	result = w.Exec( "shell", "monkey", "-p", app_name , "-c", "android.intent.category.LAUNCHER", "1" )
+	result = w.Shell( "monkey", "-p", app_name , "-c", "android.intent.category.LAUNCHER", "1" )
 	// fmt.Println( result )
 	return
 }
 
 func ( w *Wrapper ) PressButtonSequence( buttons ...int ) ( result string ) {
 	sequence_string := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(buttons)), " " ), "[]")
-	result = w.Exec( "shell" , "input" , "keyevent" , sequence_string )
+	result = w.Shell( "input" , "keyevent" , sequence_string )
 	return
 }
 
 func ( w *Wrapper ) Tap( x int , y int ) ( result string ) {
-	result = w.Exec( "shell" , "input" , "tap" , strconv.Itoa( x ) , strconv.Itoa( y ) )
+	result = w.Shell( "input" , "tap" , strconv.Itoa( x ) , strconv.Itoa( y ) )
 	return
 }
 
 func ( w *Wrapper ) PressKey( key_number int ) ( result string ) {
-	result = w.Exec( "shell" , "input" , "keyevent" , strconv.Itoa( key_number ) )
+	result = w.Shell( "input" , "keyevent" , strconv.Itoa( key_number ) )
 	return
 }
 
 // https://ktnr74.blogspot.com/2013/06/emulating-touchscreen-interaction-with.html
 func ( w *Wrapper ) Swipe( start_x int , start_y int , stop_x int , stop_y int ) ( result string ) {
-	result = w.Exec( "shell" , "input" , "swipe" , strconv.Itoa( start_x ) , strconv.Itoa( start_y ) , strconv.Itoa( stop_x ) , strconv.Itoa( stop_y ) , strconv.Itoa( 100 ) )
+	result = w.Shell( "input" , "swipe" , strconv.Itoa( start_x ) , strconv.Itoa( start_y ) , strconv.Itoa( stop_x ) , strconv.Itoa( stop_y ) , strconv.Itoa( 100 ) )
 	return
 }
 
-func (w *Wrapper) Type( text string ) ( result string ) {
-	text = strings.ReplaceAll(text, " ", "%s")
-	text = strings.ReplaceAll(text, "'", "\\'")
-	text = strings.ReplaceAll(text, "\"", "\\\"")
-	result = w.Exec("shell", "input", "text", text)
-	return
-}
-
-func ( w *Wrapper ) GetTopWindowInfo() ( results []string ) {
-	results = utils.GetTopWindowInfo()
-	// for i , line := range results {
-
-	// }
-	return
-}
-
-func ( w *Wrapper ) GetEventDevices() ( results []string ) {
-	results = utils.GetEventDevices()
-	// for i , line := range results {
-
-	// }
+func ( w *Wrapper ) Type( text string ) ( result string ) {
+	text = strings.ReplaceAll( text , " " , "%s" )
+	text = strings.ReplaceAll( text , "'" , "\\'" )
+	text = strings.ReplaceAll( text , "\"" , "\\\"" )
+	result = w.Shell( "input" , "text" , text )
 	return
 }
 
@@ -133,7 +226,7 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 		temp_dir := os.TempDir()
 		save_path = filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
 	}
-	result = utils.ExecProcessWithTimeout( ( 1500 * time.Millisecond ) , "bash" , "-c" ,
+	result = utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
 		fmt.Sprintf( "adb exec-out screencap -p > %s" , save_path ) ,
 	)
 
@@ -161,10 +254,10 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 // func ( w *Wrapper ) Screenshot() ( result string ) {
 // 	// Bad
 // 	// result = w.Exec( "exec-out" , "screencap" , "-p > test.png" )
-// 	// result = w.Exec( "shell" , "screencap -p > test.png" )
+// 	// result = w.Shell( "screencap -p > test.png" )
 // 	// Good
 // 	// screenshot_bytes = w.Exec( "exec-out" , "stty raw; screencap -p" )
-// 	screenshot_bytes := utils.ExecProcessWithTimeoutGetBytes( ( 1500 * time.Millisecond ) ,
+// 	screenshot_bytes := utils.ExecProcessWithTimeoutGetBytes( ( EXEC_TIMEOUT * time.Millisecond ) ,
 // 		// w.ADBPath , "exec-out" , "stty raw; screencap -p" ,
 // 		w.ADBPath , "exec-out" , "screencap -p" ,
 // 	)
@@ -191,7 +284,7 @@ func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []floa
 	try.This(func() {
 		temp_dir := os.TempDir()
 		temp_save_path := filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
-		utils.ExecProcessWithTimeout( ( 1500 * time.Millisecond ) , "bash" , "-c" ,
+		utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
 			fmt.Sprintf( "adb exec-out screencap -p > %s" , temp_save_path ) ,
 		)
 
@@ -291,7 +384,7 @@ func ( w *Wrapper ) WaitOnScreen( reference_image_path string , timeout time.Dur
 	timer := time.NewTimer(timeout)
 
 	// Create a ticker that will send a message on its channel every 500ms
-	ticker := time.NewTicker(500 * time.Millisecond)
+	ticker := time.NewTicker( 500 * time.Millisecond )
 
 	go func() {
 		for {
@@ -375,21 +468,22 @@ func ( w *Wrapper ) ClosestScreen( reference_image_path_directory string , crop 
 }
 
 type Event struct {
-	EventNum int
-	TypeDec  int
-	CodeDec  int
-	ValueDec int
+	EventNum int `json:"EventNum"`
+	TypeDec  int `json:"TypeDec"`
+	CodeDec  int `json:"CodeDec"`
+	ValueDec int `json:"ValueDec"`
+	Time time.Time `json:"Time"`
 }
 var (
 	streams       [][]Event
 	currentStream []Event
 	lastEventTime = time.Now()
 )
-func handle_event_output(cmd *exec.Cmd, done chan bool) {
+func handle_event_output( cmd *exec.Cmd , done chan bool ) {
 	stdout, _ := cmd.StdoutPipe()
-	scanner := bufio.NewScanner(stdout)
+	scanner := bufio.NewScanner( stdout )
 	defer stdout.Close()
-	r, _ := regexp.Compile(`^(/dev/input/event\d+): ([0-9a-f]+) ([0-9a-f]+) ([0-9a-f]+)$`)
+	r , _ := regexp.Compile( `^(/dev/input/event\d+): ([0-9a-f]+) ([0-9a-f]+) ([0-9a-f]+)$` )
 	for scanner.Scan() {
 		select {
 		case <-done:
@@ -408,7 +502,7 @@ func handle_event_output(cmd *exec.Cmd, done chan bool) {
 				if currentTime.Sub(lastEventTime) > PAUSE_THRESHOLD {
 					if len(currentStream) > 0 {
 						streams = append(streams, currentStream)
-						fmt.Printf("Stream %d:\n", len(streams))
+						fmt.Printf( "Stream %d:\n", len(streams))
 						for _, event := range currentStream {
 							fmt.Println(event)
 						}
@@ -419,19 +513,23 @@ func handle_event_output(cmd *exec.Cmd, done chan bool) {
 
 				currentStream = append(currentStream, Event{
 					EventNum: eventNum,
-					TypeDec:  int(typeDec),
-					CodeDec:  int(codeDec),
-					ValueDec: int(valueDec),
+					TypeDec:  int(typeDec) ,
+					CodeDec:  int(codeDec) ,
+					ValueDec: int(valueDec) ,
+					Time: time.Now() ,
 				})
 			}
 		}
 	}
 }
-func ( w *Wrapper ) SaveEvents( save_path string ) {
 
-	cmd := exec.Command( "adb" , "shell" , "getevent" )
+// go slow
+func ( w *Wrapper ) SaveEvents( save_path string ) {
+	args := []string{ "-s" , w.Serial , "shell" , "getevent" }
+	fmt.Println( w.ADBPath , args )
+	cmd := exec.Command( w.ADBPath , args... )
 	done := make( chan bool )
-	go handle_event_output( cmd, done )
+	go handle_event_output( cmd , done )
 	sigint := make( chan os.Signal , 1 )
 	signal.Notify( sigint , os.Interrupt , syscall.SIGTERM )
 
@@ -458,44 +556,63 @@ func ( w *Wrapper ) SaveEvents( save_path string ) {
 	utils.WriteJSON( save_path , streams )
 }
 
-
-func adb_shell( commands []string ) {
-	cmd := exec.Command("adb", "shell")
-	cmd.Args = append(cmd.Args, commands...)
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println("adbShell error:", err)
-	}
-}
-
-func playback_stream(stream []Event) {
-	var commands []string
-	for _, event := range stream {
-		eventFile := "/dev/input/event" + strconv.Itoa(event.EventNum)
-		command := fmt.Sprintf(`S="sendevent %s";$S %d %d %d;`, eventFile, event.TypeDec, event.CodeDec, event.ValueDec)
-		commands = append(commands, command)
-	}
-	adb_shell(commands)
-}
-
 func ( w *Wrapper ) PlaybackEvents( save_path string ) {
 
-	// Read the streams from the JSON file
-	data, err := ioutil.ReadFile( save_path )
+	data , err := ioutil.ReadFile( save_path )
 	if err != nil {
-		fmt.Println("Error reading JSON file:", err)
+		fmt.Println( "Error reading JSON file:" , err )
 		return
 	}
-
 	var streams [][]Event
-	err = json.Unmarshal(data, &streams)
+	err = json.Unmarshal( data , &streams )
 	if err != nil {
-		fmt.Println("Error parsing JSON file:", err)
+		fmt.Println( "Error parsing JSON file:" , err )
 		return
 	}
+	dropout_percentage := 0.4
+	fmt.Println( "total of streams" , len( streams ) )
+	for _ , stream := range streams {
 
-	for _, stream := range streams {
-		playback_stream(stream)
+		// Remove % of the events
+		minus_percent := int( float64( len( stream ) - 2 ) * dropout_percentage ) // Exclude the first and last elements
+		minus_percent_indexes := make( map[ int ]bool )
+		rand.Seed( time.Now().UnixNano() )
+		for i := 0; i < minus_percent; i++ {
+			for {
+				index := rand.Intn(len(stream)-2) + 1 // +1 to avoid the first element
+				if !minus_percent_indexes[index] {
+					minus_percent_indexes[index] = true
+					break
+				}
+			}
+		}
+
+		var new_events []Event
+		for i, event := range stream {
+			if i == 0 || i == len(stream)-1 || !minus_percent_indexes[i] {
+				new_events = append( new_events , event )
+			}
+		}
+
+		// Sort By Time
+		sort.Slice( new_events , func( i , j int ) bool {
+			return new_events[i].Time.Before( new_events[j].Time )
+		})
+		fmt.Println( "total of events" , len( new_events ) )
+
+		// Build Commands
+		var commands []string
+		for _ , event := range new_events {
+			eventFile := "/dev/input/event" + strconv.Itoa( event.EventNum )
+			command := fmt.Sprintf( `S="sendevent %s";$S %d %d %d;` , eventFile , event.TypeDec , event.CodeDec , event.ValueDec )
+			commands = append( commands , command )
+		}
+
+		args := []string{ "-s" , w.Serial , "shell" }
+		args = append( args , commands... )
+		fmt.Println( len( commands ) )
+		cmd := exec.Command( w.ADBPath , args... )
+		cmd.Run()
 	}
 }
 
