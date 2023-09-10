@@ -111,13 +111,39 @@ func ( w *Wrapper ) ScreenOff() {
 	fmt.Println( w.PressKey( 26 ) )
 }
 
+func ( w *Wrapper ) ForceScreenOn() ( screen_was_off bool ) {
+	w.ScreenOn()
+	screen_was_off = true
+	if w.Screen == false {
+		time.Sleep( 500 * time.Millisecond )
+		w.ScreenOn()
+		if w.Screen == false {
+			time.Sleep( 500 * time.Millisecond )
+			w.ScreenOn()
+		}
+	} else { screen_was_off = false }
+	// fmt.Println( "Connected , Screen On ===" , w.Screen , " , Screen Was Off ===" , screen_was_off )
+	return
+}
+
+// adb shell "sqlite3 /data/data/com.android.providers.settings/databases/settings.db  \"update system set value='-1' where name='screen_off_timeout'\";"
+func ( w *Wrapper ) DisableScreenTimeout() {
+	// w.Shell( "settings" , "put" , "system" , "background_power_saving_enable" , "0" )
+	// w.Shell( "settings" , "put" , "system" , "screen_off_timeout" , "2147483647" )
+	w.Shell( "svc" , "power" , "stayon" , "true" )
+}
+
+func ( w *Wrapper ) EnableScreenTimeout() {
+	w.Shell( "svc" , "power" , "stayon" , "false" )
+}
+
 func ( w *Wrapper ) SetVolume( level int ) {
 	w.Shell( "media" , "volume" , "--stream" , "3" , "--set" , strconv.Itoa( level ) )
 }
 
-func (w *Wrapper) SetVolumePercent(percent int) {
-	output := w.Shell("media", "volume", "--stream", "3", "--get")
-	re := regexp.MustCompile(`volume is (\d+) in range \[(\d+)\.\.(\d+)\]`)
+func (w *Wrapper) SetVolumePercent( percent int ) {
+	output := w.Shell( "media", "volume", "--stream", "3", "--get" )
+	re := regexp.MustCompile( `volume is (\d+) in range \[(\d+)\.\.(\d+)\]` )
 	matches := re.FindStringSubmatch(output)
 	if len(matches) != 4 {
 		fmt.Println("Failed to parse volume information")
@@ -138,8 +164,6 @@ func (w *Wrapper) SetVolumePercent(percent int) {
 	fmt.Printf("Setting volume to %d\n", desiredVolume)
 	w.Shell("media", "volume", "--stream", "3", "--set", strconv.Itoa(desiredVolume))
 }
-
-
 
 func ( w *Wrapper )  GetTopWindowInfo() ( lines []string ) {
 	result := w.Shell( "dumpsys" , "window" , "windows" )
@@ -218,6 +242,31 @@ func ( w *Wrapper ) OpenAppName( app_name string ) ( result string ) {
 func ( w *Wrapper ) CloseAppName( app_name string ) ( result string ) {
 	result = w.Shell( "am", "force-stop", app_name )
 	// fmt.Println( result )
+	return
+}
+
+func ( w *Wrapper ) GetRunningApps() ( packages []string ) {
+	result := w.Shell( "dumpsys", "activity" )
+	lines := strings.Split( result , "\n" )
+	package_map := make( map[ string ] bool )
+	re := regexp.MustCompile( `A=(\S+:[\w\.]+)` )
+	for _ , line := range lines {
+		if strings.Contains( line , "TaskRecord{" ) == false { continue; }
+		matches := re.FindStringSubmatch( line )
+		if len( matches ) < 1 { continue; }
+		package_name := strings.Split( matches[ 1 ] , ":" )[ 1 ]
+		if package_name == "com.amazon.firelauncher" { continue }
+		package_map[ package_name ] = true
+	}
+	for key := range package_map { packages = append( packages , key ); }
+	return
+}
+
+func ( w *Wrapper ) StopAllApps() {
+	open_apps := w.GetRunningApps()
+	for _ , app := range open_apps {
+		w.Shell( "am", "force-stop", app )
+	}
 	return
 }
 

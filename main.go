@@ -52,11 +52,31 @@ func example_spotify_play_playlist( adb *adb_wrapper.Wrapper ) {
 	// adb.SetVolume( 15 )
 }
 
+func fire_7_tablet_2019_unlock( adb *adb_wrapper.Wrapper ) {
+	adb.Swipe( 522 , 562 , 518 , 230 )
+}
+
+func fire_7_tablet_2019_close_all_apps( adb *adb_wrapper.Wrapper ) {
+	open_apps := adb.GetRunningApps()
+	if len( open_apps ) < 1 { return; }
+	adb.PressKeyName( "KEYCODE_HOME" )
+	time.Sleep( 500 * time.Millisecond )
+	adb.PressKeyName( "KEYCODE_APP_SWITCH" )
+	time.Sleep( 1 * time.Second )
+	for _ , app := range open_apps {
+		fmt.Println( "Closing" , app )
+		adb.Swipe( 528 , 302 , 528 , 43 )
+		time.Sleep( 1 * time.Second )
+	}
+	adb.PressKeyName( "KEYCODE_HOME" )
+}
+
 // brew install opencv@4
 // brew link --force opencv@4
 // export PKG_CONFIG_PATH="/usr/local/opt/opencv@4/lib/pkgconfig:$PKG_CONFIG_PATH"
 // ^^^ add to ~./bash_profile
 func main() {
+
 	// adb := adb.ConnectIP(
 	// 	"/Users/morpheous/Library/Android/sdk/platform-tools/adb" ,
 	// 	"192.168.1.120" ,
@@ -67,30 +87,17 @@ func main() {
 		"/usr/local/bin/adb" ,
 		"GCC0X8081307034C" ,
 	)
-
-	// force screen wakeup and unlock
-	adb.ScreenOn()
-	fmt.Println( adb.Screen )
-	screen_was_off := true
-	if adb.Screen == false {
-		time.Sleep( 1 * time.Second )
-		adb.ScreenOn()
-		fmt.Println( adb.Screen )
-		if adb.Screen == false {
-			time.Sleep( 1 * time.Second )
-			adb.ScreenOn()
-			fmt.Println( adb.Screen )
-		}
-	} else { screen_was_off = false }
-	fmt.Println( "Connected , Screen On ===" , adb.Screen , " , Screen Was Off ===" , screen_was_off )
-	if screen_was_off == true {
-		adb.PlaybackEvents( "unlock.json" )
+	if adb.ForceScreenOn() == true {
+		fire_7_tablet_2019_unlock( &adb )
 	}
-	// adb.SaveEvents( "unlock.json" )
+	adb.DisableScreenTimeout()
+	fire_7_tablet_2019_close_all_apps( &adb )
+	adb.PressKeyName( "KEYCODE_HOME" )
+	fmt.Println( "ready" )
 
 	// fmt.Println( adb.GetTopWindowInfo() )
 
-	example_spotify_play_playlist( &adb )
+	// example_spotify_play_playlist( &adb )
 
 	// black-screen
 	// adb.Screenshot( "spotify-login.png" )
