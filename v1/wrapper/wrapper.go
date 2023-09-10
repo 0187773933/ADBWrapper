@@ -302,6 +302,7 @@ func ( w *Wrapper ) Type( text string ) ( result string ) {
 	text = strings.ReplaceAll( text , " " , "%s" )
 	text = strings.ReplaceAll( text , "'" , "\\'" )
 	text = strings.ReplaceAll( text , "\"" , "\\\"" )
+	text = strings.ReplaceAll( text , "$" , "\\$" )
 	result = w.Shell( "input" , "text" , text )
 	return
 }

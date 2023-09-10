@@ -6,6 +6,25 @@ import (
 	adb_wrapper "github.com/0187773933/ADBWrapper/v1/wrapper"
 )
 
+func fire_7_tablet_2019_unlock( adb *adb_wrapper.Wrapper ) {
+	adb.Swipe( 522 , 562 , 518 , 230 )
+}
+
+func fire_7_tablet_2019_close_all_apps( adb *adb_wrapper.Wrapper ) {
+	open_apps := adb.GetRunningApps()
+	if len( open_apps ) < 1 { return; }
+	adb.PressKeyName( "KEYCODE_HOME" )
+	time.Sleep( 500 * time.Millisecond )
+	adb.PressKeyName( "KEYCODE_APP_SWITCH" )
+	time.Sleep( 1 * time.Second )
+	for _ , app := range open_apps {
+		fmt.Println( "Closing" , app )
+		adb.Swipe( 528 , 302 , 528 , 43 )
+		time.Sleep( 1 * time.Second )
+	}
+	adb.PressKeyName( "KEYCODE_HOME" )
+}
+
 func example_disney_plus_sign_in( adb *adb_wrapper.Wrapper ) {
 	// adb.SaveEvents( "disney_login_1.json" )
 	adb.OpenAppName( "com.disney.disneyplus" )
@@ -52,24 +71,14 @@ func example_spotify_play_playlist( adb *adb_wrapper.Wrapper ) {
 	// adb.SetVolume( 15 )
 }
 
-func fire_7_tablet_2019_unlock( adb *adb_wrapper.Wrapper ) {
-	adb.Swipe( 522 , 562 , 518 , 230 )
+
+func example_twitch( adb *adb_wrapper.Wrapper ) {
+	// fmt.Println( adb.GetRunningApps() )
+	// adb.OpenAppName( "tv.twitch.android.viewer" )
+	adb.OpenURI( fmt.Sprintf( "twitch://stream/%s" , "exbc" ) )
 }
 
-func fire_7_tablet_2019_close_all_apps( adb *adb_wrapper.Wrapper ) {
-	open_apps := adb.GetRunningApps()
-	if len( open_apps ) < 1 { return; }
-	adb.PressKeyName( "KEYCODE_HOME" )
-	time.Sleep( 500 * time.Millisecond )
-	adb.PressKeyName( "KEYCODE_APP_SWITCH" )
-	time.Sleep( 1 * time.Second )
-	for _ , app := range open_apps {
-		fmt.Println( "Closing" , app )
-		adb.Swipe( 528 , 302 , 528 , 43 )
-		time.Sleep( 1 * time.Second )
-	}
-	adb.PressKeyName( "KEYCODE_HOME" )
-}
+
 
 // brew install opencv@4
 // brew link --force opencv@4
@@ -91,9 +100,12 @@ func main() {
 		fire_7_tablet_2019_unlock( &adb )
 	}
 	adb.DisableScreenTimeout()
+	adb.StopAllApps()
 	fire_7_tablet_2019_close_all_apps( &adb )
 	adb.PressKeyName( "KEYCODE_HOME" )
 	fmt.Println( "ready" )
+
+	example_twitch( &adb )
 
 	// fmt.Println( adb.GetTopWindowInfo() )
 
