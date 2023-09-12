@@ -109,6 +109,7 @@ func ( w *Wrapper ) ScreenOff() {
 	w.Screen = w.GetScreenState()
 	if w.Screen == false { return; }
 	fmt.Println( w.PressKey( 26 ) )
+	w.Shell( "am" , "broadcast" , "-a" , "android.intent.action.SCREEN_OFF" )
 }
 
 func ( w *Wrapper ) ForceScreenOn() ( screen_was_off bool ) {
@@ -226,7 +227,6 @@ func ( w *Wrapper ) GetEventDevices() ( lines []string ) {
 	return
 }
 
-
 func ( w *Wrapper ) OpenURI( uri string ) ( result string ) {
 	result = w.Shell( "am" , "start" , "-a" , "android.intent.action.VIEW" , "-d" , uri )
 	return
@@ -291,6 +291,24 @@ func ( w *Wrapper ) PressKeyName( key_name string ) ( result string ) {
 	return
 }
 
+func ( w *Wrapper ) Landscape() ( result string ) {
+	result = w.Shell( "settings" , "put" , "system" , "user_rotation" , "1" )
+	// w.Shell( "service" , "call" , "window" , "18" , "i32" , "1" )
+	// w.Shell( "setprop" , "persist.demo.hdmirotationlock" , "true" )
+	return
+}
+
+func ( w *Wrapper ) Portrait() ( result string ) {
+	result = w.Shell( "settings" , "put" , "system" , "user_rotation" , "0" )
+	// w.Shell( "service" , "call" , "window" , "18" , "i32" , "0" )
+	return
+}
+
+func ( w *Wrapper ) Brightness( value int ) ( result string ) {
+	result = w.Shell( "settings" , "put" , "system" , "screen_brightness" , string( "0" ) )
+	// w.Shell( "service" , "call" , "window" , "18" , "i32" , "0" )
+	return
+}
 
 // https://ktnr74.blogspot.com/2013/06/emulating-touchscreen-interaction-with.html
 func ( w *Wrapper ) Swipe( start_x int , start_y int , stop_x int , stop_y int ) ( result string ) {
@@ -331,6 +349,7 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 
 	// Crop if bounding-box is present
 	if len( crop ) == 4 {
+		fmt.Println( "1" )
 		// x1 , y1 , x2 , y2 := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
 		x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
 		crop_file , crop_file_err := os.Open( save_path )
@@ -345,6 +364,7 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 		defer crop_img_out_file.Close()
 		encode_err := png.Encode( crop_img_out_file , crop_img )
 		if encode_err != nil { fmt.Println( encode_err ); return }
+		fmt.Println( "2" )
 	}
 
 	return
@@ -381,8 +401,9 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 
 func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []float64 ) {
 	try.This(func() {
-		temp_dir := os.TempDir()
-		temp_save_path := filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
+		// temp_dir := os.TempDir()
+		// temp_save_path := filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
+		temp_save_path := "adb_screenshot_4524124.png"
 		utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
 			fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , temp_save_path ) ,
 		)
@@ -410,6 +431,7 @@ func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []floa
 
 		// Crop if bounding-box is present
 		if len( crop ) == 4 {
+			fmt.Println( "1" )
 			// x1 , y1 , x2 , y2 := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
 			x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
 			crop_file , crop_file_err := os.Open( temp_save_path )
@@ -424,6 +446,7 @@ func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []floa
 			defer crop_img_out_file.Close()
 			encode_err := png.Encode( crop_img_out_file , crop_img )
 			if encode_err != nil { fmt.Println( encode_err ); return }
+			fmt.Println( "2" )
 		}
 
 		features = image_similarity.GetFeatureVector( temp_save_path )
@@ -456,12 +479,17 @@ func ( w *Wrapper ) similarity_to_feature_list( features []float64 , reference_i
 
 func ( w *Wrapper ) IsSameScreen( reference_image_path string , crop ...int ) ( result bool ) {
 	distance := w.current_screen_similarity_to_reference_image( reference_image_path , crop... )
-	// fmt.Println( distance )
+	fmt.Println( "screen distance" ,  distance , IMAGE_SIMILARITY_THRESHOLD )
 	if distance > IMAGE_SIMILARITY_THRESHOLD {
 		result = false
 	} else {
 		result = true
 	}
+	return
+}
+
+func ( w *Wrapper ) ScreenDistance( reference_image_path string , crop ...int ) ( distance float64 ) {
+	distance = w.current_screen_similarity_to_reference_image( reference_image_path , crop... )
 	return
 }
 
@@ -525,29 +553,29 @@ func ( w *Wrapper ) ClosestScreen( reference_image_path_directory string , crop 
 	total_concurrent := 5
 	var wg sync.WaitGroup
 	semaphore := make( chan struct{} , total_concurrent )
-    ctx, cancel := context.WithCancel( context.Background() )
-    defer cancel() // make sure all paths cancel the context to release resources
+	ctx, cancel := context.WithCancel( context.Background() )
+	defer cancel() // make sure all paths cancel the context to release resources
 
 	results := make( chan ScreenHit , len( files ) )
-    for _ , f := range files {
-        wg.Add( 1 )
-        go func(f os.DirEntry) {
-            defer wg.Done()
-            semaphore <- struct{}{}
-            defer func() { <-semaphore }()
-            select {
-	            case <-ctx.Done():
-	                return // returning early if context was cancelled
-	            default:
-	                imagePath := filepath.Join( reference_image_path_directory , f.Name() )
-	                distance := w.similarity_to_feature_list( current_screen_features , imagePath )
-	                results <- ScreenHit{ imagePath , distance}
-	                if distance < IMAGE_SIMILARITY_THRESHOLD {
-	                    cancel() // this will cancel all other goroutines once threshold is met
-	                }
-	            }
-        }( f )
-    }
+	for _ , f := range files {
+		wg.Add( 1 )
+		go func(f os.DirEntry) {
+			defer wg.Done()
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+			select {
+				case <-ctx.Done():
+					return // returning early if context was cancelled
+				default:
+					imagePath := filepath.Join( reference_image_path_directory , f.Name() )
+					distance := w.similarity_to_feature_list( current_screen_features , imagePath )
+					results <- ScreenHit{ imagePath , distance}
+					if distance < IMAGE_SIMILARITY_THRESHOLD {
+						cancel() // this will cancel all other goroutines once threshold is met
+					}
+				}
+		}( f )
+	}
 	go func() {
 		// Wait for all goroutines to finish and then close the results channel
 		wg.Wait()
@@ -564,6 +592,53 @@ func ( w *Wrapper ) ClosestScreen( reference_image_path_directory string , crop 
 	}
 	return
 }
+
+func (w *Wrapper) ClosestScreenInList(filePaths []string, crop ...int) (result string) {
+    current_screen_features := w.get_current_screen_features(crop...)
+
+    // Prepare the WaitGroup, semaphore, and context
+    total_concurrent := 5
+    var wg sync.WaitGroup
+    semaphore := make(chan struct{}, total_concurrent)
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel() // make sure all paths cancel the context to release resources
+
+    results := make(chan ScreenHit, len(filePaths))
+    for _, filePath := range filePaths {
+        wg.Add(1)
+        go func(filePath string) {
+            defer wg.Done()
+            semaphore <- struct{}{}
+            defer func() { <-semaphore }()
+            select {
+            case <-ctx.Done():
+                return // returning early if context was cancelled
+            default:
+                distance := w.similarity_to_feature_list(current_screen_features, filePath)
+                results <- ScreenHit{filePath, distance}
+                if distance < IMAGE_SIMILARITY_THRESHOLD {
+                    cancel() // this will cancel all other goroutines once threshold is met
+                }
+            }
+        }(filePath)
+    }
+    go func() {
+        // Wait for all goroutines to finish and then close the results channel
+        wg.Wait()
+        close(results)
+    }()
+
+    // Find the image with the smallest distance
+    minDistance := float64(1<<63 - 1) // set to maximum possible float64
+    for x := range results {
+        if x.Distance < minDistance {
+            minDistance = x.Distance
+            result = x.Path
+        }
+    }
+    return
+}
+
 
 type Event struct {
 	EventNum int `json:"EventNum"`

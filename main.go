@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
+	"strings"
 	adb_wrapper "github.com/0187773933/ADBWrapper/v1/wrapper"
 )
 
@@ -71,13 +72,93 @@ func example_spotify_play_playlist( adb *adb_wrapper.Wrapper ) {
 	// adb.SetVolume( 15 )
 }
 
-
 func example_twitch( adb *adb_wrapper.Wrapper ) {
 	// fmt.Println( adb.GetRunningApps() )
 	// adb.OpenAppName( "tv.twitch.android.viewer" )
-	adb.OpenURI( fmt.Sprintf( "twitch://stream/%s" , "exbc" ) )
+	adb.CloseAppName( "tv.twitch.android.viewer" )
+	// adb.PressKeyName( "KEYCODE_HOME" )
+	// adb.OpenURI( fmt.Sprintf( "twitch://stream/%s" , "exbc" ) )
+	adb.OpenURI( fmt.Sprintf( "twitch://stream/%s" , "gmhansn" ) )
+	// time.Sleep( 10 * time.Second )
 }
 
+func example_youtube( adb *adb_wrapper.Wrapper ) {
+	// fmt.Println( adb.GetRunningApps() )
+	// adb.OpenAppName( "tv.twitch.android.viewer" )
+	adb.StopAllApps()
+	// adb.CloseAppName( "com.amazon.firetv.youtube" )
+	// adb.PressKeyName( "KEYCODE_HOME" )
+	// adb.OpenURI( fmt.Sprintf( "twitch://stream/%s" , "exbc" ) )
+	adb.Brightness( 0 )
+	adb.OpenURI( "https://www.youtube.com/watch?v=bOwsLtwa2Ts" )
+	// time.Sleep( 10 * time.Second )
+}
+
+func example_disney( adb *adb_wrapper.Wrapper ) {
+	adb.StopAllApps()
+	adb.Brightness( 0 )
+	adb.Shell( "am" , "start" , "-a" , "android.intent.action.VIEW" , "-d" , "" )
+	// adb.OpenURI( fmt.Sprintf( "https://www.disneyplus.com/video/%s" , "" ) )
+}
+
+func example_vlc( adb *adb_wrapper.Wrapper ) {
+	adb.StopAllApps()
+	adb.Brightness( 0 )
+	adb.OpenURI( fmt.Sprintf( "vlc://%s" , "" ) )
+}
+
+func example_spotify( adb *adb_wrapper.Wrapper ) {
+
+	// Turn TV Volume Off
+	adb.StopAllApps()
+	adb.Brightness( 0 )
+	adb.CloseAppName( "com.spotify.tv.android" )
+	time.Sleep( 1 * time.Second )
+	playlist_uri := fmt.Sprintf( "spotify:playlist:%s:play" , "6ZFJWltDYCI0OVyXNleN9e" )
+	adb.OpenURI( playlist_uri )
+
+	// Enable Shuffle
+	// time.Sleep( 10 * time.Second )
+	// ( 0 , 0 ) = Top-Left
+	// adb.Screenshot( "./screenshots/spotify/shuffle_off.png" , 735 , 925 , 35 , 45 )
+
+	// adb.PressKeyName( "KEYCODE_ENTER" )
+	adb.WaitOnScreen( "./screenshots/spotify/playing.png" , ( 10 * time.Second ) , 945 , 925 , 30 , 30 )
+	fmt.Println( "Ready" )
+	time.Sleep( 1 * time.Second )
+	shuffle_test := adb.ClosestScreenInList( []string{
+			"./screenshots/spotify/shuffle_off.png" ,
+			"./screenshots/spotify/shuffle_on.png" ,
+		} ,
+		735 , 925 , 35 , 45 ,
+	)
+	if strings.Contains( shuffle_test , "off" ) {
+		adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
+		time.Sleep( 200 * time.Millisecond )
+		adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
+		time.Sleep( 200 * time.Millisecond )
+		adb.PressKeyName( "KEYCODE_ENTER" )
+		time.Sleep( 200 * time.Millisecond )
+		adb.PressKeyName( "KEYCODE_MEDIA_NEXT" )
+		time.Sleep( 200 * time.Millisecond )
+		adb.PressKeyName( "KEYCODE_DPAD_RIGHT" )
+		time.Sleep( 200 * time.Millisecond )
+		adb.PressKeyName( "KEYCODE_DPAD_RIGHT" )
+		time.Sleep( 200 * time.Millisecond )
+		adb.PressKeyName( "KEYCODE_DPAD_RIGHT" )
+	}
+
+	// Turn TV Volume On
+
+	time.Sleep( 30 * time.Second )
+	adb.OpenURI( fmt.Sprintf( "spotify:playlist:%s:play" , "3UMDmO2YJb8DgUjpSBu8y9" ) )
+	time.Sleep( 500 * time.Millisecond )
+	adb.PressKeyName( "KEYCODE_MEDIA_NEXT" )
+
+	// adb.Screenshot( "./screenshots/spotify/playing.png" , 945 , 925 , 30 , 30 )
+	// adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
+	// adb.PressKeyName( "KEYCODE_MEDIA_NEXT" )
+}
 
 
 // brew install opencv@4
@@ -86,26 +167,32 @@ func example_twitch( adb *adb_wrapper.Wrapper ) {
 // ^^^ add to ~./bash_profile
 func main() {
 
-	// adb := adb.ConnectIP(
-	// 	"/Users/morpheous/Library/Android/sdk/platform-tools/adb" ,
-	// 	"192.168.1.120" ,
-	// 	"5555" ,
-	// )
-
-	adb := adb_wrapper.ConnectUSB(
+	adb := adb_wrapper.ConnectIP(
 		"/usr/local/bin/adb" ,
-		"GCC0X8081307034C" ,
+		"192.168.4.174" ,
+		"5555" ,
 	)
-	if adb.ForceScreenOn() == true {
-		fire_7_tablet_2019_unlock( &adb )
-	}
-	adb.DisableScreenTimeout()
-	adb.StopAllApps()
-	fire_7_tablet_2019_close_all_apps( &adb )
-	adb.PressKeyName( "KEYCODE_HOME" )
-	fmt.Println( "ready" )
 
-	example_twitch( &adb )
+	// adb := adb_wrapper.ConnectUSB(
+	// 	"/usr/local/bin/adb" ,
+	// 	"GCC0X8081307034C" ,
+	// )
+	// if adb.ForceScreenOn() == true {
+	// 	fire_7_tablet_2019_unlock( &adb )
+	// }
+	// adb.DisableScreenTimeout()
+	// adb.StopAllApps()
+	// fire_7_tablet_2019_close_all_apps( &adb )
+	// adb.PressKeyName( "KEYCODE_HOME" )
+	// fmt.Println( "ready" )
+
+	// example_twitch( &adb )
+	// adb.ScreenOff()
+	// fmt.Println( adb.GetRunningApps() )
+	// example_youtube( &adb )
+	example_spotify( &adb )
+
+
 
 	// fmt.Println( adb.GetTopWindowInfo() )
 
