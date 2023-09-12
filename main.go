@@ -109,7 +109,8 @@ func example_vlc( adb *adb_wrapper.Wrapper ) {
 
 func example_spotify( adb *adb_wrapper.Wrapper ) {
 
-	// Turn TV Volume Off
+	// TODO : TV Volume Off
+	// adb.SetVolumePercent( 0 )
 	adb.StopAllApps()
 	adb.Brightness( 0 )
 	adb.CloseAppName( "com.spotify.tv.android" )
@@ -140,24 +141,23 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 		adb.PressKeyName( "KEYCODE_ENTER" )
 		time.Sleep( 200 * time.Millisecond )
 		adb.PressKeyName( "KEYCODE_MEDIA_NEXT" )
+		// adb.SetVolumePercent( 100 )
 		time.Sleep( 200 * time.Millisecond )
 		adb.PressKeyName( "KEYCODE_DPAD_RIGHT" )
 		time.Sleep( 200 * time.Millisecond )
 		adb.PressKeyName( "KEYCODE_DPAD_RIGHT" )
 		time.Sleep( 200 * time.Millisecond )
 		adb.PressKeyName( "KEYCODE_DPAD_RIGHT" )
+	} else {
+		// TODO : Turn TV Volume On
+		// adb.SetVolumePercent( 100 )
 	}
-
-	// Turn TV Volume On
 
 	time.Sleep( 10 * time.Second )
 	adb.OpenURI( fmt.Sprintf( "spotify:playlist:%s:play" , "3UMDmO2YJb8DgUjpSBu8y9" ) )
 	time.Sleep( 500 * time.Millisecond )
 	adb.PressKeyName( "KEYCODE_MEDIA_NEXT" )
 
-	// adb.Screenshot( "./screenshots/spotify/playing.png" , 945 , 925 , 30 , 30 )
-	// adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
-	// adb.PressKeyName( "KEYCODE_MEDIA_NEXT" )
 }
 
 
