@@ -150,7 +150,7 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 
 	// Turn TV Volume On
 
-	time.Sleep( 30 * time.Second )
+	time.Sleep( 10 * time.Second )
 	adb.OpenURI( fmt.Sprintf( "spotify:playlist:%s:play" , "3UMDmO2YJb8DgUjpSBu8y9" ) )
 	time.Sleep( 500 * time.Millisecond )
 	adb.PressKeyName( "KEYCODE_MEDIA_NEXT" )
