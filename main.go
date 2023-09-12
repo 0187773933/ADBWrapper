@@ -190,7 +190,8 @@ func main() {
 	// adb.ScreenOff()
 	// fmt.Println( adb.GetRunningApps() )
 	// example_youtube( &adb )
-	example_spotify( &adb )
+	// example_spotify( &adb )
+	fmt.Println( adb.GetWindowStack() )
 
 
 

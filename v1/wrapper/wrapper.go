@@ -166,23 +166,45 @@ func (w *Wrapper) SetVolumePercent( percent int ) {
 	w.Shell("media", "volume", "--stream", "3", "--set", strconv.Itoa(desiredVolume))
 }
 
-func ( w *Wrapper )  GetTopWindowInfo() ( lines []string ) {
+type Window struct {
+	Number int `json:"number"`
+	Activity string `json:"activity"`
+	IsOnScreen bool `json:"is_on_screen"`
+	IsVisible bool `json:"is_visible"`
+}
+func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 	result := w.Shell( "dumpsys" , "window" , "windows" )
-	fmt.Println( result )
-	// command := exec.Command( "bash" , "-c" , "adb shell dumpsys window windows" )
-	// var outb , errb bytes.Buffer
-	// command.Stdout = &outb
-	// command.Stderr = &errb
-	// command.Start()
-	// time.AfterFunc( ( EXEC_TIMEOUT * time.Millisecond ) , func() {
-	// 	command.Process.Signal( syscall.SIGTERM )
-	// })
-	// command.Wait()
-	// result := outb.String()
-	// start := strings.Split( result , "Window #1" )[ 1 ]
-	// middle := strings.Split( start , "Window #2" )[ 0 ]
-	// non_empty_lines := strings.Replace( middle , "\n\n" , "\n" , -1 )
-	// lines = strings.Split( non_empty_lines , "\n" )
+	var current_window *Window
+	for _ , line := range strings.Split( result , "\n" ) {
+		if current_window == nil {
+			if strings.Contains( line , "Window #" ) {
+				current_window = &Window{}
+				win_num_parts_one := strings.Split( line , "Window #" )
+				win_num_parts := strings.Split( win_num_parts_one[ 1 ] , " " )
+				current_window.Number , _ = strconv.Atoi( win_num_parts[ 0 ] )
+				parts := strings.Fields( line )
+				last_part := parts[ ( len( parts ) - 1 ) ]
+				current_window.Activity = strings.Split( last_part , "}:" )[ 0 ]
+				continue
+			}
+		} else {
+			if strings.Contains( line , "isOnScreen=" ) {
+				value := strings.Split( line , "isOnScreen=" )[ 1 ]
+				current_window.IsOnScreen = ( value == "true" )
+			} else if strings.Contains( line , "isVisible=" ) {
+				value := strings.Split( line , "isVisible=" )[ 1 ]
+				current_window.IsVisible = ( value == "true" )
+				windows = append( windows , *current_window )
+				current_window = nil
+			}
+		}
+	}
+	sort.Slice( windows , func( i , j int ) bool {
+		return windows[i].IsOnScreen && !windows[j].IsOnScreen
+	})
+	sort.Slice( windows , func( i , j int ) bool {
+		return windows[i].IsVisible && !windows[j].IsVisible
+	})
 	return
 }
 
