@@ -349,7 +349,6 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 
 	// Crop if bounding-box is present
 	if len( crop ) == 4 {
-		fmt.Println( "1" )
 		// x1 , y1 , x2 , y2 := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
 		x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
 		crop_file , crop_file_err := os.Open( save_path )
@@ -364,7 +363,6 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 		defer crop_img_out_file.Close()
 		encode_err := png.Encode( crop_img_out_file , crop_img )
 		if encode_err != nil { fmt.Println( encode_err ); return }
-		fmt.Println( "2" )
 	}
 
 	return
@@ -401,9 +399,9 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 
 func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []float64 ) {
 	try.This(func() {
-		// temp_dir := os.TempDir()
-		// temp_save_path := filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
-		temp_save_path := "adb_screenshot_4524124.png"
+		temp_dir := os.TempDir()
+		temp_save_path := filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
+		// temp_save_path := "adb_screenshot_4524124.png"
 		utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
 			fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , temp_save_path ) ,
 		)
@@ -431,7 +429,6 @@ func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []floa
 
 		// Crop if bounding-box is present
 		if len( crop ) == 4 {
-			fmt.Println( "1" )
 			// x1 , y1 , x2 , y2 := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
 			x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
 			crop_file , crop_file_err := os.Open( temp_save_path )
@@ -446,7 +443,6 @@ func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []floa
 			defer crop_img_out_file.Close()
 			encode_err := png.Encode( crop_img_out_file , crop_img )
 			if encode_err != nil { fmt.Println( encode_err ); return }
-			fmt.Println( "2" )
 		}
 
 		features = image_similarity.GetFeatureVector( temp_save_path )
