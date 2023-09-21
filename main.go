@@ -173,7 +173,17 @@ func main() {
 		"5555" ,
 	)
 
-	adb.WaitOnScreen( "./screenshots/spotify/playing.png" , ( 10 * time.Second ) , 945 , 925 , 30 , 30 )
+	// adb.Screenshot( "screenshots/spotify/shuffle_off_new.png" , 735 , 957 , 35 , 15 )
+
+	shuffle_test := adb.ClosestScreenInList( []string{
+			"./screenshots/spotify/shuffle_off.png" ,
+			"./screenshots/spotify/shuffle_on.png" ,
+		} ,
+		735 , 957 , 35 , 15 ,
+	)
+	fmt.Println( shuffle_test )
+
+	// adb.WaitOnScreen( "./screenshots/spotify/playing.png" , ( 10 * time.Second ) , 945 , 925 , 30 , 30 )
 	// adb.WaitOnScreen( "./screenshots/spotify/playing.png" , ( 10 * time.Second ) )
 
 	// adb := adb_wrapper.ConnectUSB(

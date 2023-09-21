@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"bytes"
 	"time"
+	"math"
 	"math/rand"
 	"fmt"
 	"image"
@@ -588,50 +589,28 @@ func ( w *Wrapper ) ClosestScreen( reference_image_path_directory string , crop 
 	return
 }
 
-func (w *Wrapper) ClosestScreenInList(filePaths []string, crop ...int) (result string) {
-    current_screen_features := w.get_current_screen_features(crop...)
+func ( w *Wrapper ) ClosestScreenInList( file_paths []string , crop ...int ) ( result string ) {
+	current_screen_features := w.get_current_screen_features( crop... )
 
-    // Prepare the WaitGroup, semaphore, and context
-    total_concurrent := 5
-    var wg sync.WaitGroup
-    semaphore := make(chan struct{}, total_concurrent)
-    ctx, cancel := context.WithCancel(context.Background())
-    defer cancel() // make sure all paths cancel the context to release resources
+	distances := make( []float64 , len( file_paths ) )
+	for i := 0; i < len( file_paths ); i++ {
+		reference_image_features := image_similarity.GetFeatureVectorFromFilePath( file_paths[ i ] )
+		distance := image_similarity.CalculateDistance( current_screen_features , reference_image_features )
+		// fmt.Println( file_paths[ i ] , distance )
+		distances[ i ] = distance
+	}
 
-    results := make(chan ScreenHit, len(filePaths))
-    for _, filePath := range filePaths {
-        wg.Add(1)
-        go func(filePath string) {
-            defer wg.Done()
-            semaphore <- struct{}{}
-            defer func() { <-semaphore }()
-            select {
-            case <-ctx.Done():
-                return // returning early if context was cancelled
-            default:
-                distance := w.similarity_to_feature_list(current_screen_features, filePath)
-                results <- ScreenHit{filePath, distance}
-                if distance < IMAGE_SIMILARITY_THRESHOLD {
-                    cancel() // this will cancel all other goroutines once threshold is met
-                }
-            }
-        }(filePath)
-    }
-    go func() {
-        // Wait for all goroutines to finish and then close the results channel
-        wg.Wait()
-        close(results)
-    }()
+	min_index := 0
+	min_value := math.MaxFloat64
+	for i, value := range distances {
+		if value < min_value {
+			min_value = value
+			min_index = i
+		}
+	}
 
-    // Find the image with the smallest distance
-    minDistance := float64(1<<63 - 1) // set to maximum possible float64
-    for x := range results {
-        if x.Distance < minDistance {
-            minDistance = x.Distance
-            result = x.Path
-        }
-    }
-    return
+	result = file_paths[ min_index ]
+	return
 }
 
 
