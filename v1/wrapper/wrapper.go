@@ -155,7 +155,7 @@ func ( w *Wrapper ) SetVolume( level int ) {
 	w.Shell( "media" , "volume" , "--stream" , "3" , "--set" , strconv.Itoa( level ) )
 }
 
-func (w *Wrapper) SetVolumePercent( percent int ) {
+func ( w *Wrapper ) SetVolumePercent( percent int ) {
 	output := w.Shell( "media", "volume", "--stream", "3", "--get" )
 	re := regexp.MustCompile( `volume is (\d+) in range \[(\d+)\.\.(\d+)\]` )
 	matches := re.FindStringSubmatch(output)
@@ -369,55 +369,41 @@ func ( w *Wrapper ) Type( text string ) ( result string ) {
 // https://github.com/imba28/image-similarity/blob/6f921fdf4f5ab8b37d4d563684de99601cc88d5b/pkg/index.go#L10
 // https://github.com/imba28/image-similarity/blob/6f921fdf4f5ab8b37d4d563684de99601cc88d5b/pkg/descriptor.go#L16
 // https://github.com/hybridgroup/gocv/blob/e11806566cdf2482485cc90d92ed320fa920e91a/cmd/img-similarity/main.go#L123
-func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string ) {
-	if save_path == "" {
-		temp_dir := os.TempDir()
-		save_path = filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
+func ( w *Wrapper ) ScreenshotToFile( save_path string , crop ...int ) ( result string ) {
+	utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
+		fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , save_path ) ,
+	)
+	// TODO , still even clean this up with event.Op&fsnotify.Write == fsnotify.Write {
+	// import "github.com/fsnotify/fsnotify" etc etc
+	// file_stable := make( chan bool )
+	for {
+		_ , err := os.Stat( save_path )
+		if err == nil { break }
+		time.Sleep( 10 * time.Millisecond )
 	}
-	// args := []string{"-s", w.Serial, "exec-out", "screencap", "-p"}
-	// command := exec.Command(w.ADBPath, args...)
-	// output, err := command.Output()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// err = ioutil.WriteFile(save_path, output, 0644)
-	cmd_str := fmt.Sprintf( "%s -s %s exec-out screencap -p > %s", w.ADBPath, w.Serial, save_path)
-	cmd := exec.Command( "bash", "-c", cmd_str )
-	cmd.Run()
-
-	// Crop if bounding-box is present
-	if len( crop ) == 4 {
-		// x1 , y1 , x2 , y2 := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
-		x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
-		crop_file , crop_file_err := os.Open( save_path )
-		if crop_file_err != nil { fmt.Println( crop_file_err ); return }
-		defer crop_file.Close()
-		crop_img_src , crop_img_src_err := png.Decode( crop_file )
-		if crop_file_err != nil { fmt.Println( crop_img_src_err ); return }
-		// crop_img := crop_img_src.(*image.NRGBA).SubImage(image.Rect(x1, y1, x2, y2)).(*image.NRGBA)
-		crop_img := crop_img_src.(*image.NRGBA).SubImage(image.Rect(x1, y1, x1+width, y1+height)).(*image.NRGBA)
-		crop_img_out_file , crop_img_out_file_err := os.Create( save_path )
-		if crop_file_err != nil { fmt.Println( crop_img_out_file_err ); return }
-		defer crop_img_out_file.Close()
-		encode_err := png.Encode( crop_img_out_file , crop_img )
-		if encode_err != nil { fmt.Println( encode_err ); return }
+	// Wait for the screenshot file size to stabilize
+	previous_size := int64( -1 )
+	for {
+		file_info , err := os.Stat( save_path )
+		if err != nil { return }
+		size := file_info.Size()
+		if size == previous_size { break } // File size has not changed; assuming it's done writing
+		previous_size = size
+		time.Sleep( 20 * time.Millisecond )
 	}
-
+	fmt.Println( "Screen Shot Captured" )
 	return
 }
 
-func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []float64 ) {
-
-	temp_dir := os.TempDir()
+func ( w *Wrapper ) ScreenshotToBytes( crop ...int ) ( result []byte ) {
 	rand.Seed( time.Now().UnixNano() )
 	random_number := ( rand.Intn( 9000000 ) + 1000000 )
-	temp_file_name := fmt.Sprintf( "%d.png" , random_number )
-	temp_save_path := filepath.Join( temp_dir , temp_file_name )
-
+	temp_file , _ := ioutil.TempFile( "" , fmt.Sprintf( "%d-" , random_number ) )
+	temp_save_path := temp_file.Name()
+	defer os.Remove( temp_save_path )
 	utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
 		fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , temp_save_path ) ,
 	)
-
 	// TODO , still even clean this up with event.Op&fsnotify.Write == fsnotify.Write {
 	// import "github.com/fsnotify/fsnotify" etc etc
 	// file_stable := make( chan bool )
@@ -436,96 +422,62 @@ func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []floa
 		previous_size = size
 		time.Sleep( 20 * time.Millisecond )
 	}
+	fmt.Println( "Screen Shot Captured" )
 
-	// fmt.Println( "Screen Shot Captured" , previous_size )
 
-	// Read ADB Screenshot File Into Bytes Buffer
-	temp_image_bytes , _ := ioutil.ReadFile( temp_save_path )
+	image_bytes , _ := ioutil.ReadFile( temp_save_path )
 
 	// If we don't have to crop , return early
 	if len( crop ) != 4 {
-		features = image_similarity.GetFeatureVector( temp_image_bytes )
+		result = image_bytes
 		return
 	}
 
 	// Crop
-	temp_image_byte_reader := bytes.NewReader( temp_image_bytes )
+	temp_image_byte_reader := bytes.NewReader( image_bytes )
 	temp_image , _ := png.Decode( temp_image_byte_reader )
 	x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
 	crop_area := image.Rect( x1 , y1 , ( x1 + width ) , ( y1 + height ) )
 	crop_img := temp_image.(*image.NRGBA).SubImage( crop_area ).(*image.NRGBA)
 	var crop_buffer bytes.Buffer
 	png.Encode( &crop_buffer , crop_img )
-
-	// TEMP for Testing
-	// temp_file_name_cropped := fmt.Sprintf( "cropped-%d.png" , random_number )
-	// temp_file_save_path_cropped := filepath.Join( temp_dir , temp_file_name_cropped )
-	// ioutil.WriteFile( temp_file_save_path_cropped , crop_buffer.Bytes() , 0644 )
-	// open_with_preview( temp_file_save_path_cropped )
-	// TEMP for Testing
-
-	go os.RemoveAll( temp_dir )
-
-	features = image_similarity.GetFeatureVector( crop_buffer.Bytes() )
+	result = crop_buffer.Bytes()
 	return
 }
 
-func ( w *Wrapper ) PixelTest( x int , y int ) ( result color.Color ) {
-// func ( w *Wrapper ) PixelTest( x int , y int ) ( result string ) {
-
-	temp_dir := os.TempDir()
-	rand.Seed( time.Now().UnixNano() )
-	random_number := ( rand.Intn( 9000000 ) + 1000000 )
-	temp_file_name := fmt.Sprintf( "%d.png" , random_number )
-	temp_save_path := filepath.Join( temp_dir , temp_file_name )
-
-	utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
-		fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , temp_save_path ) ,
-	)
-
-	// TODO , still even clean this up with event.Op&fsnotify.Write == fsnotify.Write {
-	// import "github.com/fsnotify/fsnotify" etc etc
-	// file_stable := make( chan bool )
-	for {
-		_ , err := os.Stat( temp_save_path )
-		if err == nil { break }
-		time.Sleep( 10 * time.Millisecond )
-	}
-	// Wait for the screenshot file size to stabilize
-	previous_size := int64( -1 )
-	for {
-		file_info , err := os.Stat( temp_save_path )
-		if err != nil { return }
-		size := file_info.Size()
-		if size == previous_size { break } // File size has not changed; assuming it's done writing
-		previous_size = size
-		time.Sleep( 20 * time.Millisecond )
-	}
-
-	fmt.Println( "Screen Shot Captured" )
-
-	temp_image_bytes , _ := ioutil.ReadFile( temp_save_path )
-	temp_image_byte_reader := bytes.NewReader( temp_image_bytes )
-	temp_image , _ := png.Decode( temp_image_byte_reader )
-	// c := temp_image.At( x , y )
-	// x_rgba , _ := c.(color.RGBA)
-	// result = fmt.Sprintf( "#%02X%02X%02X%02X" , x_rgba.R , x_rgba.G , x_rgba.B , x_rgba.A )
-
-	result = temp_image.At( x , y )
-	// r , g , b , a := result.RGBA()
-	// nr , ng , nb , na := r>>8 , g>>8 , b>>8 , a>>8
-	// fmt.Println( r , g , b , a )
-	// fmt.Println( nr , ng , nb , na )
-	// hex_color := fmt.Sprintf( "#%02X%02X%02X%02X" , nr , ng , nb , na )
-	// fmt.Println( hex_color )
-	go os.RemoveAll( temp_dir )
+func ( w *Wrapper ) ScreenshotToFeatures( crop ...int ) ( result []float64 ) {
+	screenshot := w.ScreenshotToBytes( crop... )
+	result = image_similarity.GetFeatureVector( screenshot )
 	return
 }
 
+func ( w *Wrapper ) ScreenshotToPNG( crop ...int ) ( result image.Image ) {
+	screenshot := w.ScreenshotToBytes( crop... )
+	temp_image_byte_reader := bytes.NewReader( screenshot )
+	result , _ = png.Decode( temp_image_byte_reader )
+	return
+}
 
-func ( w *Wrapper ) current_screen_similarity_to_reference_image( reference_image_path string , crop ...int ) ( distance float64 ) {
+func ( w *Wrapper ) GetPixelColor( x int , y int ) ( result color.RGBA ) {
+	screenshot := w.ScreenshotToPNG()
+	pixel := screenshot.At( x , y )
+	r , g , b , a := pixel.RGBA()
+	result.R = uint8( r )
+	result.G = uint8( g )
+	result.B = uint8( b )
+	result.A = uint8( a )
+	return
+}
+
+func ( w *Wrapper ) IsPixelTheSameColor( x int , y int , x_color color.Color ) ( result bool ) {
+	pixel_color := w.GetPixelColor( x , y )
+	result = ( pixel_color == x_color )
+	return
+}
+
+func ( w *Wrapper ) CurrentScreenSimilarityToReferenceImage( reference_image_path string , crop ...int ) ( distance float64 ) {
 	try.This(func() {
-		current_screen_features := w.get_current_screen_features( crop... )
+		current_screen_features := w.ScreenshotToFeatures( crop... )
 		reference_image_features := image_similarity.GetFeatureVectorFromFilePath( reference_image_path )
 		distance = image_similarity.CalculateDistance( current_screen_features , reference_image_features )
 	}).Catch( func( e try.E ) {
@@ -534,9 +486,9 @@ func ( w *Wrapper ) current_screen_similarity_to_reference_image( reference_imag
 	return
 }
 
-func ( w *Wrapper ) similarity_to_feature_list( features []float64 , reference_image_path string ) ( distance float64 ) {
+func ( w *Wrapper ) SimilarityToFeatureList( features []float64 , reference_image_path string ) ( distance float64 ) {
 	try.This(func() {
-		current_screen_features := w.get_current_screen_features()
+		current_screen_features := w.ScreenshotToFeatures()
 		reference_image_features := image_similarity.GetFeatureVectorFromFilePath( reference_image_path )
 		distance = image_similarity.CalculateDistance( current_screen_features , reference_image_features )
 	}).Catch( func( e try.E ) {
@@ -546,7 +498,7 @@ func ( w *Wrapper ) similarity_to_feature_list( features []float64 , reference_i
 }
 
 func ( w *Wrapper ) IsSameScreen( reference_image_path string , crop ...int ) ( result bool ) {
-	distance := w.current_screen_similarity_to_reference_image( reference_image_path , crop... )
+	distance := w.CurrentScreenSimilarityToReferenceImage( reference_image_path , crop... )
 	fmt.Println( "ADBWrapper --> IsSameScreen() --> Distance ===" ,  distance , IMAGE_SIMILARITY_THRESHOLD )
 	if distance > IMAGE_SIMILARITY_THRESHOLD {
 		result = false
@@ -557,12 +509,12 @@ func ( w *Wrapper ) IsSameScreen( reference_image_path string , crop ...int ) ( 
 }
 
 func ( w *Wrapper ) ScreenDistance( reference_image_path string , crop ...int ) ( distance float64 ) {
-	distance = w.current_screen_similarity_to_reference_image( reference_image_path , crop... )
+	distance = w.CurrentScreenSimilarityToReferenceImage( reference_image_path , crop... )
 	return
 }
 
 func ( w *Wrapper ) IsSameScreenV2( reference_image_path string , crop ...int ) ( result bool , distance float64 ) {
-	distance = w.current_screen_similarity_to_reference_image( reference_image_path , crop... )
+	distance = w.CurrentScreenSimilarityToReferenceImage( reference_image_path , crop... )
 	// fmt.Println( distance )
 	if distance > IMAGE_SIMILARITY_THRESHOLD {
 		result = false
@@ -615,7 +567,7 @@ type ScreenHit struct {
 func ( w *Wrapper ) ClosestScreen( reference_image_path_directory string , crop ...int ) ( result string ) {
 	files , _ := os.ReadDir( reference_image_path_directory )
 
-	current_screen_features := w.get_current_screen_features( crop... )
+	current_screen_features := w.ScreenshotToFeatures( crop... )
 
 	// Prepare the WaitGroup , semaphore , and context
 	total_concurrent := 5
@@ -636,7 +588,7 @@ func ( w *Wrapper ) ClosestScreen( reference_image_path_directory string , crop 
 					return // returning early if context was cancelled
 				default:
 					imagePath := filepath.Join( reference_image_path_directory , f.Name() )
-					distance := w.similarity_to_feature_list( current_screen_features , imagePath )
+					distance := w.SimilarityToFeatureList( current_screen_features , imagePath )
 					results <- ScreenHit{ imagePath , distance}
 					if distance < IMAGE_SIMILARITY_THRESHOLD {
 						cancel() // this will cancel all other goroutines once threshold is met
@@ -662,7 +614,7 @@ func ( w *Wrapper ) ClosestScreen( reference_image_path_directory string , crop 
 }
 
 func ( w *Wrapper ) ClosestScreenInList( file_paths []string , crop ...int ) ( result string ) {
-	current_screen_features := w.get_current_screen_features( crop... )
+	current_screen_features := w.ScreenshotToFeatures( crop... )
 
 	distances := make( []float64 , len( file_paths ) )
 	for i := 0; i < len( file_paths ); i++ {

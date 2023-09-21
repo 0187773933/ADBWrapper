@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"strings"
+	color "image/color"
 	adb_wrapper "github.com/0187773933/ADBWrapper/v1/wrapper"
 )
 
@@ -165,6 +166,21 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 // brew link --force opencv@4
 // export PKG_CONFIG_PATH="/usr/local/opt/opencv@4/lib/pkgconfig:$PKG_CONFIG_PATH"
 // ^^^ add to ~./bash_profile
+
+func color_equals( c1 color.RGBA , c2 color.RGBA , tolerance uint8 ) ( result bool ) {
+	r_test := abs( int( c1.R ) - int( c2.R ) ) <= int( tolerance )
+	g_test := abs( int( c1.G ) - int( c2.G ) ) <= int( tolerance )
+	b_test := abs( int( c1.B ) - int( c2.B ) ) <= int( tolerance )
+	a_test := abs( int( c1.A ) - int( c2.A ) ) <= int( tolerance )
+	if r_test && g_test && b_test && a_test { result = true } else { result = false }
+	return
+}
+
+func abs( x int ) int {
+	if x < 0 { return -x }
+	return x
+}
+
 func main() {
 
 	adb := adb_wrapper.ConnectIP(
@@ -176,9 +192,14 @@ func main() {
 	// adb.Screenshot( "screenshots/spotify/shuffle_off_new.png" , 735 , 957 , 35 , 15 )
 	// adb.Screenshot( "test-3.png" )
 
-	// #FFFFFF
-	// spotify_shuffle_dot := "752 , 964"
-	fmt.Println( adb.PixelTest( 752 , 964 ) )
+	adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
+	white := color.RGBA{ R: 255 , G: 255 , B: 255 , A: 255 }
+	// shuffle_pixel_color := adb.GetPixelColor( 752 , 964 )
+	if adb.IsPixelTheSameColor( 752 , 964 , white ) == true {
+		fmt.Println( "Shuffle === ON" )
+	} else {
+		fmt.Println( "Shuffle === OFF" )
+	}
 
 	// shuffle_test := adb.ClosestScreenInList( []string{
 	// 		"./screenshots/spotify/shuffle_off.png" ,
