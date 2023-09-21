@@ -173,6 +173,9 @@ func main() {
 		"5555" ,
 	)
 
+	adb.WaitOnScreen( "./screenshots/spotify/playing.png" , ( 10 * time.Second ) , 945 , 925 , 30 , 30 )
+	// adb.WaitOnScreen( "./screenshots/spotify/playing.png" , ( 10 * time.Second ) )
+
 	// adb := adb_wrapper.ConnectUSB(
 	// 	"/usr/local/bin/adb" ,
 	// 	"GCC0X8081307034C" ,
@@ -191,7 +194,8 @@ func main() {
 	// fmt.Println( adb.GetRunningApps() )
 	// example_youtube( &adb )
 	// example_spotify( &adb )
-	fmt.Println( adb.GetWindowStack() )
+
+	// fmt.Println( adb.GetWindowStack() )
 
 
 

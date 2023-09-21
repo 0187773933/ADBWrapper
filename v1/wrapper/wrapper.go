@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"regexp"
 	"bufio"
+	"bytes"
 	"time"
 	"math/rand"
 	"fmt"
@@ -99,7 +100,7 @@ func ( w *Wrapper ) GetScreenState() ( result bool ) {
 	return
 }
 
-func ( w *Wrapper )  ScreenOn() {
+func ( w *Wrapper ) ScreenOn() {
 	w.Screen = w.GetScreenState()
 	if w.Screen == true { return; }
 	fmt.Println( w.PressKey( 26 ) )
@@ -257,13 +258,16 @@ func ( w *Wrapper ) OpenURI( uri string ) ( result string ) {
 // adb shell pm list packages
 func ( w *Wrapper ) OpenAppName( app_name string ) ( result string ) {
 	result = w.Shell( "monkey", "-p", app_name , "-c", "android.intent.category.LAUNCHER", "1" )
-	// fmt.Println( result )
+	return
+}
+
+func ( w *Wrapper ) OpenActivity( activity_name string ) ( result string ) {
+	result = w.Shell( "am" , "start" , "-n" , activity_name )
 	return
 }
 
 func ( w *Wrapper ) CloseAppName( app_name string ) ( result string ) {
 	result = w.Shell( "am", "force-stop", app_name )
-	// fmt.Println( result )
 	return
 }
 
@@ -390,93 +394,66 @@ func ( w *Wrapper ) Screenshot( save_path string , crop ...int ) ( result string
 	return
 }
 
-// func ( w *Wrapper ) Screenshot() ( result string ) {
-// 	// Bad
-// 	// result = w.Exec( "exec-out" , "screencap" , "-p > test.png" )
-// 	// result = w.Shell( "screencap -p > test.png" )
-// 	// Good
-// 	// screenshot_bytes = w.Exec( "exec-out" , "stty raw; screencap -p" )
-// 	screenshot_bytes := utils.ExecProcessWithTimeoutGetBytes( ( EXEC_TIMEOUT * time.Millisecond ) ,
-// 		// w.ADBPath , "exec-out" , "stty raw; screencap -p" ,
-// 		w.ADBPath , "exec-out" , "screencap -p" ,
-// 	)
-// 	// fmt.Println( screenshot_bytes )
-// 	img , _ , err := image.Decode( bytes.NewReader( screenshot_bytes ) )
-// 	fmt.Println( err )
-// 	fmt.Println( img )
-// 	// img , _ , _ := image.Decode( bytes.NewReader( screenshot_bytes ) )
-// 	// out , _ := os.Create( "screenshot.png" )
-// 	// defer out.Close()
-// 	// png.Encode( out , img )
-// 	// var opts jpeg.Options
-// 	// opts.Quality = 1
-
-// 	// err = jpeg.Encode(out, img, &opts)
-// 	// //jpeg.Encode(out, img, nil)
-// 	// if err != nil {
-// 	//     log.Println(err)
-// 	// }
-// 	return
-// }
-
 func ( w *Wrapper ) get_current_screen_features( crop ...int ) ( features []float64 ) {
-	try.This(func() {
-		temp_dir := os.TempDir()
-		temp_save_path := filepath.Join( temp_dir , "adb_screenshot_4524124.png" )
-		// temp_save_path := "adb_screenshot_4524124.png"
-		utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
-			fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , temp_save_path ) ,
-		)
 
-		// Option 1 - Just Wait the full 1.5 seconds
-		// time.Sleep( 1501 * time.Millisecond )
+	temp_dir := os.TempDir()
+	rand.Seed( time.Now().UnixNano() )
+	random_number := ( rand.Intn( 9000000 ) + 1000000 )
+	temp_file_name := fmt.Sprintf( "%d.png" , random_number )
+	temp_save_path := filepath.Join( temp_dir , temp_file_name )
 
-		// Option 2 - Wait until the file exists
-		// Wait for the screenshot to be created
-		for {
-			_ , err := os.Stat( temp_save_path )
-			if err == nil { break }
-			time.Sleep( 10 * time.Millisecond ) // sleep for a bit; don't busy wait
-		}
-		// Wait for the screenshot file size to stabilize
-		previousSize := int64( -1 )
-		for {
-			fileInfo , err := os.Stat( temp_save_path )
-			if err != nil { return }
-			size := fileInfo.Size()
-			if size == previousSize { break } // File size has not changed; assuming it's done writing
-			previousSize = size
-			time.Sleep( 10 * time.Millisecond )
-		}
+	utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
+		fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , temp_save_path ) ,
+	)
 
-		// Crop if bounding-box is present
-		if len( crop ) == 4 {
-			// x1 , y1 , x2 , y2 := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
-			x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
-			crop_file , crop_file_err := os.Open( temp_save_path )
-			if crop_file_err != nil { fmt.Println( crop_file_err ); return }
-			defer crop_file.Close()
-			crop_img_src , crop_img_src_err := png.Decode( crop_file )
-			if crop_file_err != nil { fmt.Println( crop_img_src_err ); return }
-			// crop_img := crop_img_src.(*image.NRGBA).SubImage(image.Rect(x1, y1, x2, y2)).(*image.NRGBA)
-			crop_img := crop_img_src.(*image.NRGBA).SubImage(image.Rect(x1, y1, x1+width, y1+height)).(*image.NRGBA)
-			crop_img_out_file , crop_img_out_file_err := os.Create( temp_save_path )
-			if crop_file_err != nil { fmt.Println( crop_img_out_file_err ); return }
-			defer crop_img_out_file.Close()
-			encode_err := png.Encode( crop_img_out_file , crop_img )
-			if encode_err != nil { fmt.Println( encode_err ); return }
-		}
+	// TODO , still even clean this up with event.Op&fsnotify.Write == fsnotify.Write {
+	// import "github.com/fsnotify/fsnotify" etc etc
+	// file_stable := make( chan bool )
+	for {
+		_ , err := os.Stat( temp_save_path )
+		if err == nil { break }
+		time.Sleep( 10 * time.Millisecond )
+	}
+	// Wait for the screenshot file size to stabilize
+	previous_size := int64( -1 )
+	for {
+		file_info , err := os.Stat( temp_save_path )
+		if err != nil { return }
+		size := file_info.Size()
+		if size == previous_size { break } // File size has not changed; assuming it's done writing
+		previous_size = size
+		time.Sleep( 20 * time.Millisecond )
+	}
 
-		features = image_similarity.GetFeatureVector( temp_save_path )
-	}).Catch( func( e try.E ) {
-		fmt.Println( e )
-	})
+	// fmt.Println( "Screen Shot Captured" , previous_size )
+
+	// Read ADB Screenshot File Into Bytes Buffer
+	temp_image_bytes , _ := ioutil.ReadFile( temp_save_path )
+
+	// If we don't have to crop , return early
+	if len( crop ) != 4 {
+		features = image_similarity.GetFeatureVector( temp_image_bytes )
+		return
+	}
+
+	// Crop
+	temp_image_byte_reader := bytes.NewReader( temp_image_bytes )
+	temp_image , _ := png.Decode( temp_image_byte_reader )
+	x1 , y1 , width , height := crop[ 0 ] , crop[ 1 ] , crop[ 2 ] , crop[ 3 ]
+	crop_area := image.Rect( x1 , y1 , ( x1 + width ) , ( y1 + height ) )
+	crop_img := temp_image.(*image.NRGBA).SubImage( crop_area ).(*image.NRGBA)
+	var crop_buffer bytes.Buffer
+	png.Encode( &crop_buffer , crop_img )
+	features = image_similarity.GetFeatureVector( crop_buffer.Bytes() )
+
 	return
 }
+
+
 func ( w *Wrapper ) current_screen_similarity_to_reference_image( reference_image_path string , crop ...int ) ( distance float64 ) {
 	try.This(func() {
 		current_screen_features := w.get_current_screen_features( crop... )
-		reference_image_features := image_similarity.GetFeatureVector( reference_image_path )
+		reference_image_features := image_similarity.GetFeatureVectorFromFilePath( reference_image_path )
 		distance = image_similarity.CalculateDistance( current_screen_features , reference_image_features )
 	}).Catch( func( e try.E ) {
 		fmt.Println( e )
@@ -487,7 +464,7 @@ func ( w *Wrapper ) current_screen_similarity_to_reference_image( reference_imag
 func ( w *Wrapper ) similarity_to_feature_list( features []float64 , reference_image_path string ) ( distance float64 ) {
 	try.This(func() {
 		current_screen_features := w.get_current_screen_features()
-		reference_image_features := image_similarity.GetFeatureVector( reference_image_path )
+		reference_image_features := image_similarity.GetFeatureVectorFromFilePath( reference_image_path )
 		distance = image_similarity.CalculateDistance( current_screen_features , reference_image_features )
 	}).Catch( func( e try.E ) {
 		fmt.Println( e )
@@ -497,7 +474,7 @@ func ( w *Wrapper ) similarity_to_feature_list( features []float64 , reference_i
 
 func ( w *Wrapper ) IsSameScreen( reference_image_path string , crop ...int ) ( result bool ) {
 	distance := w.current_screen_similarity_to_reference_image( reference_image_path , crop... )
-	fmt.Println( "screen distance" ,  distance , IMAGE_SIMILARITY_THRESHOLD )
+	fmt.Println( "ADBWrapper --> IsSameScreen() --> Distance ===" ,  distance , IMAGE_SIMILARITY_THRESHOLD )
 	if distance > IMAGE_SIMILARITY_THRESHOLD {
 		result = false
 	} else {
@@ -523,10 +500,10 @@ func ( w *Wrapper ) IsSameScreenV2( reference_image_path string , crop ...int ) 
 }
 
 func ( w *Wrapper ) WaitOnScreen( reference_image_path string , timeout time.Duration , crop ...int ) ( result bool ) {
-	done := make(chan bool, 1)
+	done := make( chan bool , 1 )
 
 	// Create a timer that will send a message on its channel after the timeout
-	timer := time.NewTimer(timeout)
+	timer := time.NewTimer( timeout )
 
 	// Create a ticker that will send a message on its channel every 500ms
 	ticker := time.NewTicker( 500 * time.Millisecond )

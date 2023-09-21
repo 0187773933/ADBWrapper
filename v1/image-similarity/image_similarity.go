@@ -38,7 +38,7 @@ func featuresInSegment(img gocv.Mat, mask gocv.Mat, hist gocv.Mat) ([]float64, e
 	return fCopy, err
 }
 
-func GetFeatureVector( image_path string ) ( features []float64 ) {
+func GetFeatureVectorFromFilePath( image_path string ) ( features []float64 ) {
 	img := gocv.IMRead( image_path , gocv.IMReadColor)
 	if img.Empty() { panic( "image is empty" ) }
 	defer img.Close()
@@ -93,6 +93,63 @@ func GetFeatureVector( image_path string ) ( features []float64 ) {
 
 	return
 }
+
+func GetFeatureVector( image_bytes []byte ) ( features []float64 ) {
+	img , _ := gocv.IMDecode( image_bytes , gocv.IMReadColor )
+	if img.Empty() { panic( "image is empty" ) }
+	defer img.Close()
+
+	// convert img to hsv color space
+	// img.ConvertTo(&img, gocv.ColorBGRToHSV)
+	// img.ConvertTo(&img, gocv.ColorBGRToHSV)
+	img.ConvertTo( &img , 40 )
+
+	black := color.RGBA{0, 0, 0, 0}
+	white := color.RGBA{255, 255, 255, 0}
+
+	width, height := img.Size()[1], img.Size()[0]
+	cx, cy := width/2, height/2
+
+	segments := [][]int{
+		{0, 0, cx, cy},          // top left
+		{cx, 0, width, cy},      // top right
+		{0, cy, cx, height},     // bottom left
+		{cx, cy, width, height}, // bottom right
+	}
+
+	axesX, axesY := int((float32(width)*0.75)/2), int((float32(height)*0.75)/2)
+	ellipMask := gocv.NewMatWithSize(height, width, gocv.MatTypeCV8UC1)
+	defer ellipMask.Close()
+	gocv.Ellipse(&ellipMask, image.Point{cx, cy}, image.Point{axesX, axesY}, 0, 0, 360, white, -1)
+
+	segmentMask := gocv.NewMatWithSize(height, width, gocv.MatTypeCV8UC1)
+	defer segmentMask.Close()
+
+	segmentHistogram := gocv.NewMat()
+	defer segmentHistogram.Close()
+	for _, segment := range segments {
+		// reset mask
+		gocv.Rectangle(&segmentMask, image.Rect(0, 0, width, height), black, -1)
+
+		// calculate intersection of current segment and elliptic mask
+		gocv.Rectangle(&segmentMask, image.Rect(segment[0], segment[1], segment[2], segment[3]), white, -1)
+		gocv.Subtract(segmentMask, ellipMask, &segmentMask)
+
+		// ShowMask(segmentMask)
+
+		segmentFeatures, _ := featuresInSegment(img, segmentMask, segmentHistogram)
+		features = append(features, segmentFeatures...)
+	}
+
+	// ShowMask(ellipMask)
+	// why
+
+	ellipFeatures, _ := featuresInSegment(img, ellipMask, segmentHistogram)
+	features = append(features, ellipFeatures...)
+
+	return
+}
+
 
 
 // https://stats.stackexchange.com/questions/470720/why-is-it-called-chi2-distance-kernel#471093
