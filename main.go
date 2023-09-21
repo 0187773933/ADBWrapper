@@ -174,14 +174,19 @@ func main() {
 	)
 
 	// adb.Screenshot( "screenshots/spotify/shuffle_off_new.png" , 735 , 957 , 35 , 15 )
+	// adb.Screenshot( "test-3.png" )
 
-	shuffle_test := adb.ClosestScreenInList( []string{
-			"./screenshots/spotify/shuffle_off.png" ,
-			"./screenshots/spotify/shuffle_on.png" ,
-		} ,
-		735 , 957 , 35 , 15 ,
-	)
-	fmt.Println( shuffle_test )
+	// #FFFFFF
+	// spotify_shuffle_dot := "752 , 964"
+	fmt.Println( adb.PixelTest( 752 , 964 ) )
+
+	// shuffle_test := adb.ClosestScreenInList( []string{
+	// 		"./screenshots/spotify/shuffle_off.png" ,
+	// 		"./screenshots/spotify/shuffle_on.png" ,
+	// 	} ,
+	// 	735 , 957 , 35 , 15 ,
+	// )
+	// fmt.Println( shuffle_test )
 
 	// adb.WaitOnScreen( "./screenshots/spotify/playing.png" , ( 10 * time.Second ) , 945 , 925 , 30 , 30 )
 	// adb.WaitOnScreen( "./screenshots/spotify/playing.png" , ( 10 * time.Second ) )
