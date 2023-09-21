@@ -391,7 +391,7 @@ func ( w *Wrapper ) ScreenshotToFile( save_path string , crop ...int ) ( result 
 		previous_size = size
 		time.Sleep( 20 * time.Millisecond )
 	}
-	fmt.Println( "Screen Shot Captured" )
+	// fmt.Println( "Screen Shot Captured" )
 	return
 }
 
@@ -422,8 +422,7 @@ func ( w *Wrapper ) ScreenshotToBytes( crop ...int ) ( result []byte ) {
 		previous_size = size
 		time.Sleep( 20 * time.Millisecond )
 	}
-	fmt.Println( "Screen Shot Captured" )
-
+	// fmt.Println( "Screen Shot Captured" )
 
 	image_bytes , _ := ioutil.ReadFile( temp_save_path )
 
@@ -788,3 +787,16 @@ func ( w *Wrapper ) PlaybackEvents( save_path string ) {
 }
 
 
+// func color_equals( c1 color.RGBA , c2 color.RGBA , tolerance uint8 ) ( result bool ) {
+// 	r_test := abs( int( c1.R ) - int( c2.R ) ) <= int( tolerance )
+// 	g_test := abs( int( c1.G ) - int( c2.G ) ) <= int( tolerance )
+// 	b_test := abs( int( c1.B ) - int( c2.B ) ) <= int( tolerance )
+// 	a_test := abs( int( c1.A ) - int( c2.A ) ) <= int( tolerance )
+// 	if r_test && g_test && b_test && a_test { result = true } else { result = false }
+// 	return
+// }
+
+// func abs( x int ) int {
+// 	if x < 0 { return -x }
+// 	return x
+// }
