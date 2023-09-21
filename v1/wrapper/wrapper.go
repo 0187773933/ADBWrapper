@@ -512,6 +512,12 @@ func ( w *Wrapper ) PixelTest( x int , y int ) ( result color.Color ) {
 	// result = fmt.Sprintf( "#%02X%02X%02X%02X" , x_rgba.R , x_rgba.G , x_rgba.B , x_rgba.A )
 
 	result = temp_image.At( x , y )
+	// r , g , b , a := result.RGBA()
+	// nr , ng , nb , na := r>>8 , g>>8 , b>>8 , a>>8
+	// fmt.Println( r , g , b , a )
+	// fmt.Println( nr , ng , nb , na )
+	// hex_color := fmt.Sprintf( "#%02X%02X%02X%02X" , nr , ng , nb , na )
+	// fmt.Println( hex_color )
 	go os.RemoveAll( temp_dir )
 	return
 }
