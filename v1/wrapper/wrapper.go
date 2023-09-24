@@ -21,11 +21,12 @@ import (
 	"path/filepath"
 	"encoding/json"
 	"io/ioutil"
+	// fsnotify "github.com/fsnotify/fsnotify"
 	// "unsafe"
 	// "image"
 	_ "image/jpeg"
 	"image/png"
-	"image/color"
+	color "image/color"
 	// "bytes"
 	utils "github.com/0187773933/ADBWrapper/v1/utils"
 	image_similarity "github.com/0187773933/ADBWrapper/v1/image-similarity"
@@ -154,6 +155,20 @@ func ( w *Wrapper ) EnableScreenTimeout() {
 func ( w *Wrapper ) SetVolume( level int ) {
 	w.Shell( "media" , "volume" , "--stream" , "3" , "--set" , strconv.Itoa( level ) )
 }
+
+func ( w *Wrapper ) GetVolume() ( result int ) {
+	output := w.Shell( "media", "volume", "--stream", "3", "--get" )
+	re := regexp.MustCompile( `volume is (\d+) in range \[(\d+)\.\.(\d+)\]` )
+	matches := re.FindStringSubmatch(output)
+	if len(matches) != 4 {
+		fmt.Println("Failed to parse volume information")
+		return
+	}
+	result, _ = strconv.Atoi(matches[1])
+	// fmt.Printf("Current volume: %d\n")
+	return
+}
+
 
 func ( w *Wrapper ) SetVolumePercent( percent int ) {
 	output := w.Shell( "media", "volume", "--stream", "3", "--get" )
@@ -373,9 +388,9 @@ func ( w *Wrapper ) ScreenshotToFile( save_path string , crop ...int ) ( result 
 	utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
 		fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , save_path ) ,
 	)
-	// TODO , still even clean this up with event.Op&fsnotify.Write == fsnotify.Write {
-	// import "github.com/fsnotify/fsnotify" etc etc
-	// file_stable := make( chan bool )
+	// // TODO , still even clean this up with event.Op&fsnotify.Write == fsnotify.Write {
+	// // import "github.com/fsnotify/fsnotify" etc etc
+	// // file_stable := make( chan bool )
 	for {
 		_ , err := os.Stat( save_path )
 		if err == nil { break }
@@ -391,7 +406,21 @@ func ( w *Wrapper ) ScreenshotToFile( save_path string , crop ...int ) ( result 
 		previous_size = size
 		time.Sleep( 20 * time.Millisecond )
 	}
-	// fmt.Println( "Screen Shot Captured" )
+	// watcher.Add( save_path )
+	// for {
+	// 	select {
+	// 	case event := <-watcher.Events:
+	// 		// Check for the write event
+	// 		if event.Op&fsnotify.Write == fsnotify.Write {
+	// 			log.Println("File write detected:", event.Name)
+	// 			// Do your work here
+	// 			return
+	// 		}
+	// 	case err := <-watcher.Errors:
+	// 		log.Println("Error:", err)
+	// 	}
+	// }
+	fmt.Println( "Screen Shot Captured" )
 	return
 }
 
