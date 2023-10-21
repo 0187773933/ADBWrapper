@@ -133,7 +133,6 @@ type MediaSession struct {
 	Type string `json:"type"`
 	Activity string `json:"activity"`
 	Package string `json:"package"`
-	Metadata string `json:"metadata"`
 	State string `json:"state"`
 	Position string `json:"position"`
 	BufferedPosition string `json:"buffered_position"`
@@ -141,7 +140,6 @@ type MediaSession struct {
 	Speed string `json:"speed"`
 	Description string `json:"description"`
 }
-
 func ( w *Wrapper ) GetMediaSessionInfo() ( result MediaSession ) {
 	media_session_dump := w.Shell( "dumpsys" , "media_session" )
 	media_session_dump_lines := strings.Split( media_session_dump , "\n" )
