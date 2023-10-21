@@ -113,6 +113,72 @@ func ( w *Wrapper ) GetScreenState() ( result bool ) {
 	return
 }
 
+type Status struct {
+	DisplayOn bool `json:"display_on"`
+	Volume int `json:"volume"`
+	Activity string `json:"activity"`
+	MediaSession MediaSession `json:"media_session"`
+}
+
+func ( w *Wrapper ) GetStatus() ( result Status ) {
+	result.DisplayOn = w.GetScreenState()
+	result.Volume = w.GetVolume()
+	result.Activity = w.GetActivity()
+	result.MediaSession = w.GetMediaSessionInfo()
+	return
+}
+
+
+type MediaSession struct {
+	Type string `json:"type"`
+	Activity string `json:"activity"`
+	Package string `json:"package"`
+	Metadata string `json:"metadata"`
+	State string `json:"state"`
+	Position string `json:"position"`
+	BufferedPosition string `json:"buffered_position"`
+	UpdatedTime string `json:"updated_time"`
+	Speed string `json:"speed"`
+	Description string `json:"description"`
+}
+
+func ( w *Wrapper ) GetMediaSessionInfo() ( result MediaSession ) {
+	media_session_dump := w.Shell( "dumpsys" , "media_session" )
+	media_session_dump_lines := strings.Split( media_session_dump , "\n" )
+	for line_index , line := range media_session_dump_lines {
+		if strings.Contains( line , "active=true" ) {
+			session_type_line := media_session_dump_lines[ ( line_index - 5 ) ]
+			if strings.Contains( session_type_line , "bluetooth" ) { continue; }
+			session := strings.Split( session_type_line , " " )
+			session = utils.RemoveEmpties( session )
+			result.Type = session[ 0 ]
+			result.Activity = session[ 1 ]
+			state_line := media_session_dump_lines[ ( line_index + 4 ) ]
+			state_key_values := strings.Split( state_line , "," )
+			state_key_values = utils.RemoveEmpties( state_key_values )
+			state_num := strings.Split( state_key_values[ 0 ] , "state=" )[ 2 ]
+			switch state_num {
+				case "0":
+					result.State = "none"
+				case "1":
+					result.State = "stopped"
+				case "2":
+					result.State = "paused"
+				case "3":
+					result.State = "playing"
+			}
+			result.Position = strings.Split( state_key_values[ 1 ] , "position=" )[ 1 ]
+			result.BufferedPosition = strings.Split( state_key_values[ 2 ] , "buffered position=" )[ 1 ]
+			result.Speed = strings.Split( state_key_values[ 3 ] , "speed=" )[ 1 ]
+			result.UpdatedTime = strings.Split( state_key_values[ 4 ] , "updated=" )[ 1 ]
+			description_line := media_session_dump_lines[ ( line_index + 7 ) ]
+			// description_line_items := strings.Split( description_line , "=" )
+			result.Description = strings.Split( description_line , "description=" )[ 1 ]
+		}
+	}
+	return
+}
+
 func ( w *Wrapper ) ScreenOn() {
 	w.Screen = w.GetScreenState()
 	if w.Screen == true { return; }
@@ -233,6 +299,22 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 	sort.Slice( windows , func( i , j int ) bool {
 		return windows[i].IsVisible && !windows[j].IsVisible
 	})
+	return
+}
+
+func ( w *Wrapper ) GetTopWindow() ( result Window ) {
+	windows := w.GetWindowStack()
+	if len( windows ) > 0 {
+		result = windows[ 0 ]
+	}
+	return
+}
+
+func ( w *Wrapper ) GetActivity() ( result string ) {
+	windows := w.GetWindowStack()
+	if len( windows ) > 0 {
+		result = windows[ 0 ].Activity
+	}
 	return
 }
 

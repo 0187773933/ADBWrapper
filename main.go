@@ -167,6 +167,8 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 // export PKG_CONFIG_PATH="/usr/local/opt/opencv@4/lib/pkgconfig:$PKG_CONFIG_PATH"
 // ^^^ add to ~./bash_profile
 
+// mFocusedApp=Token{d00eec4 ActivityRecord{ca7c5d7 u0 com.amazon.firetv.youtube/dev.cobalt.app.MainActivity t265}}
+
 func main() {
 
 	adb := adb_wrapper.ConnectIP(
@@ -176,7 +178,12 @@ func main() {
 	)
 
 	// adb.Screenshot( "screenshots/spotify/shuffle_off_new.png" , 735 , 957 , 35 , 15 )
-	adb.ScreenshotToFile( "screenshots/spotify/6.png" )
+	// adb.ScreenshotToFile( "screenshots/disney/profile_selection.png" )
+	status := adb.GetStatus()
+	fmt.Println( status )
+	fmt.Println( status.MediaSession.Description )
+	fmt.Println( status.MediaSession.Position )
+	fmt.Println( status.MediaSession.BufferedPosition )
 
 	// adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
 	// white := color.RGBA{ R: 255 , G: 255 , B: 255 , A: 255 }

@@ -117,3 +117,12 @@ func WriteJSON( filePath string , data interface{} ) {
 	file, _ := json.MarshalIndent( data , "" , " " )
 	_ = ioutil.WriteFile( filePath , file , 0644 )
 }
+
+func RemoveEmpties( list []string ) ( result []string ) {
+	for _ , item := range list {
+		if item != "" {
+			result = append( result , item )
+		}
+	}
+	return
+}
