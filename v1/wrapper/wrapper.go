@@ -403,9 +403,15 @@ func ( w *Wrapper ) StopAllApps() {
 }
 
 func ( w *Wrapper ) Sleep() {
-	w.Shell( "input" , "keyevent" , KEYCODE_SLEEP )
+	w.Shell( "input" , "keyevent" , "KEYCODE_SLEEP" ) // 223
 	return
 }
+
+func ( w *Wrapper ) Wakeup() {
+	w.Shell( "input" , "keyevent" , "KEYCODE_WAKEUP" ) // 224
+	return
+}
+
 
 func ( w *Wrapper ) PressButtonSequence( buttons ...int ) ( result string ) {
 	sequence_string := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(buttons)), " " ), "[]")
