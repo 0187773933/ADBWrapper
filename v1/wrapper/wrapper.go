@@ -128,7 +128,6 @@ func ( w *Wrapper ) GetStatus() ( result Status ) {
 	return
 }
 
-
 type MediaSession struct {
 	Type string `json:"type"`
 	Activity string `json:"activity"`
@@ -400,6 +399,11 @@ func ( w *Wrapper ) StopAllApps() {
 	for _ , app := range open_apps {
 		w.Shell( "am", "force-stop", app )
 	}
+	return
+}
+
+func ( w *Wrapper ) Sleep() {
+	w.Shell( "input" , "keyevent" , KEYCODE_SLEEP )
 	return
 }
 
