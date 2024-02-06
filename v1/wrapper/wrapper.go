@@ -90,6 +90,13 @@ func ( w *Wrapper ) Shell( arguments ...string ) ( result string ) {
 	return
 }
 
+func ( w *Wrapper ) GetCPUArchitecture() ( result string ) {
+	x := w.Shell( "getprop" , "ro.product.cpu.abi" )
+	lines := strings.Split( x , "\n" )
+	result = lines[ 0 ]
+	return
+}
+
 func ( w *Wrapper ) GetScreenState() ( result bool ) {
 	// Display Power: state=OFF
 	x := w.Shell( "dumpsys" , "power" )
@@ -411,7 +418,6 @@ func ( w *Wrapper ) Wakeup() {
 	w.Shell( "input" , "keyevent" , "KEYCODE_WAKEUP" ) // 224
 	return
 }
-
 
 func ( w *Wrapper ) PressButtonSequence( buttons ...int ) ( result string ) {
 	sequence_string := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(buttons)), " " ), "[]")

@@ -174,15 +174,17 @@ func main() {
 
 	adb := adb_wrapper.ConnectIP(
 		"/usr/local/bin/adb" ,
-		"192.168.4.174" ,
+		"192.168.4.193" ,
 		"5555" ,
 	)
 
 	// adb.Screenshot( "screenshots/spotify/shuffle_off_new.png" , 735 , 957 , 35 , 15 )
-	// adb.ScreenshotToFile( "screenshots/disney/profile_selection.png" )
+	// adb.ScreenshotToFile( "screenshots/spotify/new_position_5.png" )
+
 	status := adb.GetStatus()
 	status_json , _ := json.MarshalIndent( status , "", "    " )
 	fmt.Println( string( status_json ) )
+	fmt.Println( adb.GetCPUArchitecture() )
 
 	// adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
 	// white := color.RGBA{ R: 255 , G: 255 , B: 255 , A: 255 }
