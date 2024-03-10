@@ -58,7 +58,7 @@ type Wrapper struct {
 func ConnectIP( adb_path string , host_ip string , host_port string ) ( wrapper Wrapper ) {
 	wrapper.ADBPath = adb_path
 	wrapper.Serial = host_ip + ":" + host_port
-	connection_result := utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , adb_path , "connect" , host_ip )
+	connection_result := utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , adb_path , "connect" , wrapper.Serial )
 	if strings.Contains( connection_result , "already connected" ) {
 		wrapper.Connected = true
 	} else if strings.Contains( connection_result , "failed to connect" ) {
