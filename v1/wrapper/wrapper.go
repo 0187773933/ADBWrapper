@@ -322,6 +322,39 @@ func ( w *Wrapper ) GetActivity() ( result string ) {
 	return
 }
 
+func ( w *Wrapper ) GetCurrentPackage() ( result string ) {
+	result = w.Shell( "dumpsys" , "window" , "windows" )
+	for _ , line := range strings.Split( result , "\n" ) {
+		if strings.Contains( line , "mCurrentFocus" ) {
+			parts := strings.Fields( line )
+			last_part := parts[ ( len( parts ) - 1 ) ]
+			result = strings.Split( last_part , "}" )[ 0 ]
+			result = strings.Split( last_part , "/" )[ 0 ]
+			break
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) GetPlaybackPosition() ( result string ) {
+	current_package := w.GetCurrentPackage()
+	w.Shell( "input" , "keyevent" , "KEYCODE_MEDIA_PLAY_PAUSE" , "KEYCODE_MEDIA_PLAY_PAUSE" )
+	result = w.Shell( "dumpsys" , "media_session" )
+	lines := strings.Split( result , "\n" )
+	for line_index , line := range lines {
+		if strings.Contains( line , "active=true" ) {
+			session_type_line := lines[ ( line_index - 5 ) ]
+			if strings.Contains( session_type_line , current_package ) {
+				playback_line := lines[ ( line_index + 4 ) ]
+				position := strings.Split( playback_line , "position=" )[ 1 ]
+				position = strings.Split( position , "," )[ 0 ]
+				fmt.Println( current_package , "===" , position )
+			}
+		}
+	}
+	return
+}
+
 // type EventDevice struct {
 // 	DevicePath string
 // 	Bus        string

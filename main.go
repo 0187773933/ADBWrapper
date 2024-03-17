@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 	"strings"
-	"encoding/json"
+	// "encoding/json"
 	// color "image/color"
 	adb_wrapper "github.com/0187773933/ADBWrapper/v1/wrapper"
 )
@@ -181,10 +181,13 @@ func main() {
 	// adb.Screenshot( "screenshots/spotify/shuffle_off_new.png" , 735 , 957 , 35 , 15 )
 	// adb.ScreenshotToFile( "screenshots/spotify/new_position_5.png" )
 
-	status := adb.GetStatus()
-	status_json , _ := json.MarshalIndent( status , "", "    " )
-	fmt.Println( string( status_json ) )
-	fmt.Println( adb.GetCPUArchitecture() )
+	// adb.GetCurrentPackage()
+	adb.GetPlaybackPosition()
+
+	// status := adb.GetStatus()
+	// status_json , _ := json.MarshalIndent( status , "", "    " )
+	// fmt.Println( string( status_json ) )
+	// fmt.Println( adb.GetCPUArchitecture() )
 
 	// adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
 	// white := color.RGBA{ R: 255 , G: 255 , B: 255 , A: 255 }
