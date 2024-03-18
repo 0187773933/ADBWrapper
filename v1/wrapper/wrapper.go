@@ -336,19 +336,23 @@ func ( w *Wrapper ) GetCurrentPackage() ( result string ) {
 	return
 }
 
-func ( w *Wrapper ) GetPlaybackPosition() ( result string ) {
-	current_package := w.GetCurrentPackage()
+func ( w *Wrapper ) GetPlaybackPosition() ( package_name string , position int ) {
+	package_name = w.GetCurrentPackage()
+	// the only way to get media_session to update is after user interaction ( pause , resume )
+	// pausing is fine on hulu movies/tv , but *can* break on twitch livestreams
+	// TODO = check if livestream needs restarted
 	w.Shell( "input" , "keyevent" , "KEYCODE_MEDIA_PLAY_PAUSE" , "KEYCODE_MEDIA_PLAY_PAUSE" )
-	result = w.Shell( "dumpsys" , "media_session" )
+	result := w.Shell( "dumpsys" , "media_session" )
 	lines := strings.Split( result , "\n" )
 	for line_index , line := range lines {
 		if strings.Contains( line , "active=true" ) {
 			session_type_line := lines[ ( line_index - 5 ) ]
-			if strings.Contains( session_type_line , current_package ) {
+			if strings.Contains( session_type_line , package_name ) {
 				playback_line := lines[ ( line_index + 4 ) ]
-				position := strings.Split( playback_line , "position=" )[ 1 ]
-				position = strings.Split( position , "," )[ 0 ]
-				fmt.Println( current_package , "===" , position )
+				position_str := strings.Split( playback_line , "position=" )[ 1 ]
+				position_str = strings.Split( position_str , "," )[ 0 ]
+				position , _ = strconv.Atoi( position_str )
+				return
 			}
 		}
 	}

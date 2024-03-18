@@ -182,7 +182,7 @@ func main() {
 	// adb.ScreenshotToFile( "screenshots/spotify/new_position_5.png" )
 
 	// adb.GetCurrentPackage()
-	adb.GetPlaybackPosition()
+	fmt.Println( adb.GetPlaybackPosition() )
 
 	// status := adb.GetStatus()
 	// status_json , _ := json.MarshalIndent( status , "", "    " )
