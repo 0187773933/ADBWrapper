@@ -378,6 +378,105 @@ func ( w *Wrapper ) GetPlaybackPosition() ( package_name string , position int )
 	return
 }
 
+// state=PlaybackState {state=1, position=0, buffered position=0, speed=1.0, updated=2195684109, actions=1049468, custom actions=[], active item id=-1, error=null}
+type PlaybackResult struct {
+	PackageStr string `json:"package_str"`
+	Type string `json:"type"`
+	State string `json:"state"`
+	Position int `json:"position"`
+	Updated int `json:"updated"`
+}
+func parse_playback_line( line string ) ( result PlaybackResult ) {
+	position_str_parts := strings.Split( line , "position=" )
+	if len( position_str_parts ) > 1 {
+		position_str_parts := strings.Split( position_str_parts[ 1 ] , "," )
+		if len( position_str_parts ) > 1 {
+			result.Position , _ = strconv.Atoi( position_str_parts[ 0 ] )
+		}
+	}
+	updated_str_parts := strings.Split( line , "updated=" )
+	if len( updated_str_parts ) > 1 {
+		updated_str_parts := strings.Split( updated_str_parts[ 1 ] , "," )
+		if len( position_str_parts ) > 1 {
+			result.Updated , _ = strconv.Atoi( updated_str_parts[ 0 ] )
+		}
+	}
+	state_str_parts := strings.Split( line , "{state=" )
+	if len( state_str_parts ) > 1 {
+		state_str_parts = strings.Split( state_str_parts[ 1 ] , "," )
+		if len( state_str_parts ) > 1 {
+			switch state_str_parts[ 0 ] {
+				case "0":
+					result.State = "none"
+				case "1":
+					result.State = "stopped"
+				case "2":
+					result.State = "paused"
+				case "3":
+					result.State = "playing"
+				default:
+					result.State = "unknown"
+			}
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) GetPlaybackPositions() ( result map[string]PlaybackResult ) {
+	// package := w.GetCurrentPackage()
+	result = make( map[string]PlaybackResult )
+	ms_result := w.Shell( "dumpsys" , "media_session" )
+	lines := strings.Split( ms_result , "\n" )
+	for line_index , line := range lines {
+		// fmt.Println( line_index , line )
+		if strings.Contains( line , "active=true" ) {
+			session_type_line := lines[ ( line_index - 5 ) ]
+			session_type_line = strings.TrimSpace( session_type_line )
+			session_parts := strings.Fields( session_type_line )
+			// package_str := strings.ToLower( session_parts[ 1 ] )
+			package_str := strings.Join( session_parts[ 1 : ] , " " )
+			type_str := strings.ToLower( session_parts[ 0 ] )
+			x := parse_playback_line( lines[ ( line_index + 4 ) ] )
+			x.PackageStr = package_str
+			x.Type = type_str
+			result[ type_str ] = x
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) GetUpdatedPlaybackPosition( x_input PlaybackResult ) ( result PlaybackResult ) {
+	ms_result := w.Shell( "dumpsys" , "media_session" )
+	lines := strings.Split( ms_result , "\n" )
+	for line_index , line := range lines {
+		if strings.Contains( line , "active=true" ) {
+			session_type_line := lines[ ( line_index - 5 ) ]
+			session_type_line = strings.TrimSpace( session_type_line )
+			session_parts := strings.Fields( session_type_line )
+			type_str := strings.ToLower( session_parts[ 0 ] )
+			if type_str != x_input.Type { continue; }
+			result = parse_playback_line( lines[ ( line_index + 4 ) ] )
+			result.PackageStr = x_input.PackageStr
+			result.Type = type_str
+			return
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) WaitOnUpdatedPlaybackPosition( x_input PlaybackResult ) ( result PlaybackResult ) {
+	max_tries := 30
+	for i := 0; i < max_tries; i++ {
+		// fmt.Println( "attempt" , i , "of" , max_tries )
+		result = w.GetUpdatedPlaybackPosition( x_input )
+		if result.Position != x_input.Position {
+			return
+		}
+		time.Sleep( 500 * time.Millisecond )
+	}
+	return
+}
+
 // type EventDevice struct {
 // 	DevicePath string
 // 	Bus        string

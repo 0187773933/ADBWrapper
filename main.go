@@ -182,7 +182,27 @@ func main() {
 	// adb.ScreenshotToFile( "screenshots/spotify/new_position_5.png" )
 
 	// adb.GetCurrentPackage()
-	fmt.Println( adb.GetPlaybackPosition() )
+	// fmt.Println( adb.GetPlaybackPosition() )
+	positions := adb.GetPlaybackPositions()
+	// spotify := positions[ "spotify-android-tv-media-session" ]
+	// spotify := positions[ "netflix" ]
+	// fmt.Println( spotify )
+	// adb.Shell( "input" , "keyevent" , "KEYCODE_MEDIA_PLAY_PAUSE" )
+	// time.Sleep( 100 * time.Millisecond )
+	// adb.Shell( "input" , "keyevent" , "KEYCODE_MEDIA_PLAY_PAUSE" )
+	// spotify = adb.GetUpdatedPlaybackPosition( spotify )
+	// fmt.Println( spotify )
+
+	fmt.Println( positions[ "netflix" ] )
+	updated := adb.WaitOnUpdatedPlaybackPosition( positions[ "netflix" ] )
+	fmt.Println( updated )
+
+	// fmt.Println( adb.GetPlaybackPositionTest() )
+	// fmt.Println( adb.GetPlaybackPositionTest() )
+	// fmt.Println( adb.GetPlaybackPositionTest() )
+	// fmt.Println( adb.GetPlaybackPositionTest() )
+	// fmt.Println( adb.GetPlaybackPositionTest() )
+	// fmt.Println( adb.GetPlaybackPositionTest() )
 
 	// status := adb.GetStatus()
 	// status_json , _ := json.MarshalIndent( status , "", "    " )

@@ -12,6 +12,11 @@ import (
 	"bytes"
 )
 
+func PrettyPrint( input interface{} ) {
+	jd , _ := json.MarshalIndent( input , "" , "  " )
+	fmt.Println( string( jd ) )
+}
+
 func ExecProcess( bash_command string , arguments ...string ) ( result string ) {
 	command := exec.Command( bash_command , arguments... )
 	//command.Env = append( os.Environ() , "DISPLAY=:0.0" )
