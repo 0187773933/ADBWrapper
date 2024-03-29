@@ -173,29 +173,37 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 
 func main() {
 
-	adb := adb_wrapper.ConnectIP(
-		"/usr/local/bin/adb" ,
-		"192.168.4.193" , // firecube
-		"5555" ,
-	)
-
-	// adb := adb_wrapper.ConnectUSB(
+	// adb := adb_wrapper.ConnectIP(
 	// 	"/usr/local/bin/adb" ,
-	// 	"GCC0X8081307034C" , // firetablet
+	// 	"192.168.4.193" , // firecube
+	// 	// "192.168.4.56" , // firestick
+	// 	"5555" ,
 	// )
+
+	adb := adb_wrapper.ConnectUSB(
+		"/usr/local/bin/adb" ,
+		"GCC0X8081307034C" , // firetablet
+	)
 	utils.PrettyPrint( adb )
 
 	// activity := adb.GetPackagesDefaultActivity( "tv.twitch.android.viewer" )
 	// fmt.Println( activity )
 
-	activities := adb.GetPackagesActivities( "tv.twitch.android.viewer" )
-	utils.PrettyPrint( activities )
+	// packages := adb.GetInstalledPackages()
+	// utils.PrettyPrint( packages )
+	// for _ , x_package := range packages {
+	// 	activities := adb.GetPackagesActivities( x_package )
+	// 	fmt.Println( x_package , activities )
+	// }
+
+	// activities := adb.GetPackagesActivities( "tv.twitch.android.viewer" )
+	// utils.PrettyPrint( activities )
 
 	// packages := adb.GetInstalledPackages()
 	// fmt.Println( packages )
 
-	// windows := adb.GetWindowStack()
-	// utils.PrettyPrint( windows )
+	windows := adb.GetWindowStack()
+	utils.PrettyPrint( windows )
 
 	// current_window := adb.GetTopWindow()
 	// utils.PrettyPrint( current_window )

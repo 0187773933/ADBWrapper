@@ -30,6 +30,15 @@ func ExecProcess( bash_command string , arguments ...string ) ( result string ) 
 	return
 }
 
+func Contains( slice *[]string , str *string ) bool {
+	for _ , v := range *slice {
+		if v == *str {
+			return true
+		}
+	}
+	return false
+}
+
 // https://github.com/dohzya/timeout/blob/master/main.go
 func ExecProcessWithTimeout( timeout_duration time.Duration , bash_command string , arguments ...string ) ( result string ) {
 	command := exec.Command( bash_command , arguments... )

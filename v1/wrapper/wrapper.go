@@ -279,6 +279,22 @@ type Window struct {
 	IsOnScreen bool `json:"is_on_screen"`
 	IsVisible bool `json:"is_visible"`
 }
+
+
+
+var IGNORED_PACKAGES = []string{
+	"SpeechUi" ,
+	"InputMethod" ,
+	"PointerLocation" ,
+	"NavigationBar" ,
+	"StatusBar" ,
+	"DockedStackDivider" ,
+	"com.android.systemui.ImageWallpaper" ,
+	"com.amazon.firelauncher" ,
+	"com.android.launcher3" ,
+	"com.amazon.vizzini" ,
+	"com.amazon.venezia" ,
+}
 func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 	result := w.Shell( "dumpsys" , "window" , "windows" )
 	var current_window *Window
@@ -293,18 +309,12 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 				last_part := parts[ ( len( parts ) - 1 ) ]
 				// current_window.Activity = strings.Split( last_part , "}:" )[ 0 ]
 				pa := strings.Split( last_part , "}:" )[ 0 ]
+				// fmt.Println( pa )
 				pa_parts := strings.Split( pa , "/" )
-				switch len( pa_parts ) {
-					case 1:
-						current_window.Package = pa_parts[ 0 ]
-						current_window.Activity = ""
-						break;
-					case 2:
-						current_window.Package = pa_parts[ 0 ]
-						current_window.Activity = pa_parts[ 1 ]
-						break;
+				current_window.Package = pa_parts[ 0 ]
+				if len( pa_parts ) > 1 {
+					current_window.Activity = pa_parts[ 1 ]
 				}
-				continue
 			}
 		} else {
 			if strings.Contains( line , "isOnScreen=" ) {
@@ -313,9 +323,19 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 			} else if strings.Contains( line , "isVisible=" ) {
 				value := strings.Split( line , "isVisible=" )[ 1 ]
 				current_window.IsVisible = ( value == "true" )
-				windows = append( windows , *current_window )
-				current_window = nil
 			}
+			// fmt.Println( "potential :" , current_window.Package )
+			// if strings.HasPrefix( current_window.Package , "com.amazon" ) == false {
+			// 	if strings.HasPrefix( current_window.Package , "com.android" ) == false {
+			// 		if utils.Contains( &IGNORED_PACKAGES , &current_window.Package ) == false {
+			// 			windows = append( windows , *current_window )
+			// 		}
+			// 	}
+			// }
+			if utils.Contains( &IGNORED_PACKAGES , &current_window.Package ) == false {
+				windows = append( windows , *current_window )
+			}
+			current_window = nil
 		}
 	}
 	sort.Slice( windows , func( i , j int ) bool {
@@ -677,8 +697,11 @@ func ( w *Wrapper ) GetPackagesDefaultActivity( package_name string ) ( result s
 // https://stackoverflow.com/questions/12698814/get-launchable-activity-name-of-package-from-adb
 // https://stackoverflow.com/questions/2789462/find-package-name-for-android-apps-to-use-intent-to-launch-market-app-from-web/7502519#7502519
 func ( w *Wrapper ) GetPackagesActivities( package_name string ) ( activities []string ) {
+	default_activity := w.GetPackagesDefaultActivity( package_name )
 	log_lines := w.GetPackagesLog( package_name )
 	seen := make( map[ string ] bool )
+	seen[ default_activity ] = true
+	activities = append( activities , default_activity )
 	package_split_part := fmt.Sprintf( "%s/" , package_name )
 	for _ , line := range log_lines {
 		line_lower := strings.ToLower( line )
@@ -690,9 +713,8 @@ func ( w *Wrapper ) GetPackagesActivities( package_name string ) ( activities []
 			if len( cmp_activity_parts ) < 2 { continue }
 			cmp_activity := cmp_activity_parts[ 1 ]
 			cmp_activity = strings.Fields( cmp_activity )[ 0 ]
-			if strings.HasSuffix( cmp_activity , "}" ) {
-				cmp_activity = strings.TrimSuffix( cmp_activity , "}" )
-			}
+			cmp_activity = strings.TrimSuffix( cmp_activity , "}" )
+			cmp_activity = strings.TrimPrefix( cmp_activity , "." )
 			_ , ok := seen[ cmp_activity ]
 			if ok == false {
 				seen[ cmp_activity ] = true
@@ -702,6 +724,7 @@ func ( w *Wrapper ) GetPackagesActivities( package_name string ) ( activities []
 		class_parts := strings.Split( line , "class=" )
 		if len( class_parts ) > 1 {
 			class_activity := strings.Fields( class_parts[ 1 ] )[ 0 ]
+			class_activity = strings.TrimPrefix( class_activity , "." )
 			_ , ok := seen[ class_activity ]
 			if ok == false {
 				seen[ class_activity ] = true
@@ -711,7 +734,6 @@ func ( w *Wrapper ) GetPackagesActivities( package_name string ) ( activities []
 	}
 	return
 }
-
 
 func ( w *Wrapper ) StopAllApps() {
 	open_apps := w.GetRunningApps()
