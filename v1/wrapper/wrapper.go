@@ -651,6 +651,68 @@ func ( w *Wrapper ) GetInstalledPackages() ( packages []string ) {
 	return
 }
 
+func ( w *Wrapper ) GetPackagesLog( package_name string ) ( log_lines []string ) {
+	result := w.Shell( "pm", "dump" , package_name )
+	log_lines = strings.Split( result , "\n" )
+	return
+}
+
+func ( w *Wrapper ) GetPackagesDefaultActivity( package_name string ) ( result string ) {
+	// result = w.Shell( "cmd" , "package" , "resolve-activity" , "--brief" , package_name , "tail" , "-n" , "1" )
+	x := w.Shell( "cmd" , "package" , "resolve-activity" , package_name )
+	lines := strings.Split( x , "\n" )
+	for _ , line := range lines {
+		if strings.HasPrefix( line , "  name=" ) {
+			parts := strings.Split( line , "name=" )
+			result = parts[ 1 ]
+			return
+		}
+	}
+	return
+}
+
+// really you need to pull/dump apk and extract stuff from manifest
+// adb pull .apk path
+// aapt dump badging <pulledfile.apk>
+// https://stackoverflow.com/questions/12698814/get-launchable-activity-name-of-package-from-adb
+// https://stackoverflow.com/questions/2789462/find-package-name-for-android-apps-to-use-intent-to-launch-market-app-from-web/7502519#7502519
+func ( w *Wrapper ) GetPackagesActivities( package_name string ) ( activities []string ) {
+	log_lines := w.GetPackagesLog( package_name )
+	seen := make( map[ string ] bool )
+	package_split_part := fmt.Sprintf( "%s/" , package_name )
+	for _ , line := range log_lines {
+		line_lower := strings.ToLower( line )
+		if strings.Contains( line_lower , "main" ) == false { continue }
+		// fmt.Println( line )
+		cmp_parts := strings.Split( line , "cmp=" )
+		if len( cmp_parts ) > 1 {
+			cmp_activity_parts := strings.Split( cmp_parts[ 1 ] , package_split_part )
+			if len( cmp_activity_parts ) < 2 { continue }
+			cmp_activity := cmp_activity_parts[ 1 ]
+			cmp_activity = strings.Fields( cmp_activity )[ 0 ]
+			if strings.HasSuffix( cmp_activity , "}" ) {
+				cmp_activity = strings.TrimSuffix( cmp_activity , "}" )
+			}
+			_ , ok := seen[ cmp_activity ]
+			if ok == false {
+				seen[ cmp_activity ] = true
+				activities = append( activities , cmp_activity )
+			}
+		}
+		class_parts := strings.Split( line , "class=" )
+		if len( class_parts ) > 1 {
+			class_activity := strings.Fields( class_parts[ 1 ] )[ 0 ]
+			_ , ok := seen[ class_activity ]
+			if ok == false {
+				seen[ class_activity ] = true
+				activities = append( activities , class_activity )
+			}
+		}
+	}
+	return
+}
+
+
 func ( w *Wrapper ) StopAllApps() {
 	open_apps := w.GetRunningApps()
 	for _ , app := range open_apps {
