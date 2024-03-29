@@ -7,6 +7,7 @@ import (
 	// "encoding/json"
 	// color "image/color"
 	adb_wrapper "github.com/0187773933/ADBWrapper/v1/wrapper"
+	utils "github.com/0187773933/ADBWrapper/v1/utils"
 )
 
 func fire_7_tablet_2019_unlock( adb *adb_wrapper.Wrapper ) {
@@ -172,18 +173,33 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 
 func main() {
 
-	adb := adb_wrapper.ConnectIP(
+	// adb := adb_wrapper.ConnectIP(
+	// 	"/usr/local/bin/adb" ,
+	// 	"192.168.4.193" , // firecube
+	// 	"5555" ,
+	// )
+
+	adb := adb_wrapper.ConnectUSB(
 		"/usr/local/bin/adb" ,
-		"192.168.4.193" ,
-		"5555" ,
+		"GCC0X8081307034C" , // firetablet
 	)
+
+	// packages := adb.GetInstalledPackages()
+	// fmt.Println( packages )
+
+	windows := adb.GetWindowStack()
+	utils.PrettyPrint( windows )
+
+	// current_window := adb.GetTopWindow()
+	// utils.PrettyPrint( current_window )
 
 	// adb.Screenshot( "screenshots/spotify/shuffle_off_new.png" , 735 , 957 , 35 , 15 )
 	// adb.ScreenshotToFile( "screenshots/spotify/new_position_5.png" )
 
 	// adb.GetCurrentPackage()
+
 	// fmt.Println( adb.GetPlaybackPosition() )
-	positions := adb.GetPlaybackPositions()
+	// positions := adb.GetPlaybackPositions()
 	// spotify := positions[ "spotify-android-tv-media-session" ]
 	// spotify := positions[ "netflix" ]
 	// fmt.Println( spotify )
@@ -193,9 +209,9 @@ func main() {
 	// spotify = adb.GetUpdatedPlaybackPosition( spotify )
 	// fmt.Println( spotify )
 
-	fmt.Println( positions[ "netflix" ] )
-	updated := adb.WaitOnUpdatedPlaybackPosition( positions[ "netflix" ] )
-	fmt.Println( updated )
+	// fmt.Println( positions[ "netflix" ] )
+	// updated := adb.WaitOnUpdatedPlaybackPosition( positions[ "netflix" ] )
+	// fmt.Println( updated )
 
 	// fmt.Println( adb.GetPlaybackPositionTest() )
 	// fmt.Println( adb.GetPlaybackPositionTest() )

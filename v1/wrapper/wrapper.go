@@ -78,6 +78,13 @@ func ConnectUSB( adb_path string , serial string ) ( wrapper Wrapper ) {
 	return
 }
 
+func ( w *Wrapper ) RestartServer() {
+	utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , w.ADBPath , "kill-server" )
+	time.Sleep( 100 * time.Millisecond )
+	utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , w.ADBPath , "start-server" )
+	return
+}
+
 func ( w *Wrapper ) Exec( arguments ...string ) ( result string ) {
 	args := append( []string{ "-s" , w.Serial } , arguments... )
 	result = utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , w.ADBPath , args... )
@@ -96,6 +103,7 @@ func ( w *Wrapper ) GetCPUArchitecture() ( result string ) {
 	result = lines[ 0 ]
 	return
 }
+
 
 func ( w *Wrapper ) GetScreenState() ( result bool ) {
 	// Display Power: state=OFF
@@ -230,8 +238,8 @@ func ( w *Wrapper ) GetVolume() ( result int ) {
 	output := w.Shell( "media", "volume", "--stream", "3", "--get" )
 	re := regexp.MustCompile( `volume is (\d+) in range \[(\d+)\.\.(\d+)\]` )
 	matches := re.FindStringSubmatch(output)
-	if len(matches) != 4 {
-		fmt.Println("Failed to parse volume information")
+	if len( matches ) != 4 {
+		// fmt.Println( "Failed to parse volume information" )
 		return
 	}
 	result, _ = strconv.Atoi(matches[1])
@@ -244,17 +252,17 @@ func ( w *Wrapper ) SetVolumePercent( percent int ) {
 	output := w.Shell( "media", "volume", "--stream", "3", "--get" )
 	re := regexp.MustCompile( `volume is (\d+) in range \[(\d+)\.\.(\d+)\]` )
 	matches := re.FindStringSubmatch(output)
-	if len(matches) != 4 {
-		fmt.Println("Failed to parse volume information")
+	if len( matches ) != 4 {
+		// fmt.Println( "Failed to parse volume information" )
 		return
 	}
 
 	// Parse the current volume and range
-	currentVolume, _ := strconv.Atoi(matches[1])
-	minVolume, _ := strconv.Atoi(matches[2])
-	maxVolume, _ := strconv.Atoi(matches[3])
+	currentVolume , _ := strconv.Atoi( matches[ 1 ] )
+	minVolume , _ := strconv.Atoi( matches[ 2 ] )
+	maxVolume , _ := strconv.Atoi( matches[ 3 ] )
 
-	fmt.Printf("Current volume: %d, Min volume: %d, Max volume: %d\n", currentVolume, minVolume, maxVolume)
+	fmt.Printf( "Current volume: %d, Min volume: %d, Max volume: %d\n" , currentVolume , minVolume , maxVolume )
 
 	// Calculate the desired volume based on the percentage
 	desiredVolume := minVolume + (maxVolume-minVolume)*percent/100
@@ -266,6 +274,7 @@ func ( w *Wrapper ) SetVolumePercent( percent int ) {
 
 type Window struct {
 	Number int `json:"number"`
+	Package string `json:"package"`
 	Activity string `json:"activity"`
 	IsOnScreen bool `json:"is_on_screen"`
 	IsVisible bool `json:"is_visible"`
@@ -282,7 +291,19 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 				current_window.Number , _ = strconv.Atoi( win_num_parts[ 0 ] )
 				parts := strings.Fields( line )
 				last_part := parts[ ( len( parts ) - 1 ) ]
-				current_window.Activity = strings.Split( last_part , "}:" )[ 0 ]
+				// current_window.Activity = strings.Split( last_part , "}:" )[ 0 ]
+				pa := strings.Split( last_part , "}:" )[ 0 ]
+				pa_parts := strings.Split( pa , "/" )
+				switch len( pa_parts ) {
+					case 1:
+						current_window.Package = pa_parts[ 0 ]
+						current_window.Activity = ""
+						break;
+					case 2:
+						current_window.Package = pa_parts[ 0 ]
+						current_window.Activity = pa_parts[ 1 ]
+						break;
+				}
 				continue
 			}
 		} else {
@@ -303,6 +324,45 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 	sort.Slice( windows , func( i , j int ) bool {
 		return windows[i].IsVisible && !windows[j].IsVisible
 	})
+	obscuring_window_parts := strings.Split( result , "mObscuringWindow=" )
+	if len( obscuring_window_parts ) > 1 {
+		if strings.HasPrefix( obscuring_window_parts[ 1 ] , "Window{" )  {
+			obscuring_window_line := strings.Split( obscuring_window_parts[ 1 ] , "\n" )[ 0 ]
+			// fmt.Println( "we have a hidden window to deal with" )
+			obscuring_window_line_parts := strings.Split( obscuring_window_line , " " )
+			last_part := obscuring_window_line_parts[ ( len( obscuring_window_line_parts ) - 1 ) ]
+			new_top_activity := strings.Split( last_part , "}" )[ 0 ]
+			pa_parts := strings.Split( new_top_activity , "/" )
+			x_package := ""
+			x_activity := ""
+			switch len( pa_parts ) {
+				case 1:
+					x_package = pa_parts[ 0 ]
+					break;
+				case 2:
+					x_package = pa_parts[ 0 ]
+					x_activity = pa_parts[ 1 ]
+					break;
+			}
+			new_top_window := Window{
+				Number: 0 ,
+				Package:  x_package ,
+				Activity: x_activity ,
+				IsOnScreen: true ,
+				IsVisible: true ,
+			}
+			new_window_stack := []Window{ new_top_window , windows[ 0 ] }
+			// new_index := 1
+			for _ , window := range windows[ 1 : ] {
+				if window.Activity == x_activity { continue }
+				// window.Number = new_index
+				// new_index += 1
+				new_window_stack = append( new_window_stack , window )
+			}
+			// windows = append( []Window{ new_top_window } , windows... )
+			windows = new_window_stack
+		}
+	}
 	return
 }
 
@@ -322,22 +382,34 @@ func ( w *Wrapper ) GetActivity() ( result string ) {
 	return
 }
 
-func ( w *Wrapper ) GetCurrentPackage() ( result string ) {
-	result = w.Shell( "dumpsys" , "window" , "windows" )
-	for _ , line := range strings.Split( result , "\n" ) {
-		if strings.Contains( line , "mCurrentFocus" ) {
-			parts := strings.Fields( line )
-			last_part := parts[ ( len( parts ) - 1 ) ]
-			result = strings.Split( last_part , "}" )[ 0 ]
-			result = strings.Split( last_part , "/" )[ 0 ]
-			break
-		}
+func ( w *Wrapper ) GetPackage() ( result string ) {
+	windows := w.GetWindowStack()
+	if len( windows ) > 0 {
+		result = windows[ 0 ].Package
 	}
 	return
 }
 
+// func ( w *Wrapper ) GetCurrentPackage() ( result string ) {
+// 	// result = w.Shell( "dumpsys" , "window" , "windows" )
+// 	// for _ , line := range strings.Split( result , "\n" ) {
+// 	// 	if strings.Contains( line , "mCurrentFocus" ) {
+// 	// 		parts := strings.Fields( line )
+// 	// 		last_part := parts[ ( len( parts ) - 1 ) ]
+// 	// 		result = strings.Split( last_part , "}" )[ 0 ]
+// 	// 		result = strings.Split( last_part , "/" )[ 0 ]
+// 	// 		break
+// 	// 	}
+// 	// }
+// 	window := w.GetTopWindow()
+// 	result = window.Activity
+// 	return
+// }
+
 func ( w *Wrapper ) GetPlaybackPositionForce() ( package_name string , position int ) {
-	package_name = w.GetCurrentPackage()
+	// package_name = w.GetCurrentPackage()
+	package_name = w.GetTopWindow().Package
+
 	// the only way to get media_session to update is after user interaction ( pause , resume )
 	// pausing is fine on hulu movies/tv , but *can* break on twitch livestreams
 	// TODO = check if livestream needs restarted
@@ -360,7 +432,8 @@ func ( w *Wrapper ) GetPlaybackPositionForce() ( package_name string , position 
 }
 
 func ( w *Wrapper ) GetPlaybackPosition() ( package_name string , position int ) {
-	package_name = w.GetCurrentPackage()
+	// package_name = w.GetCurrentPackage()
+	package_name = w.GetTopWindow().Package
 	result := w.Shell( "dumpsys" , "media_session" )
 	lines := strings.Split( result , "\n" )
 	for line_index , line := range lines {
@@ -553,6 +626,28 @@ func ( w *Wrapper ) GetRunningApps() ( packages []string ) {
 		package_map[ package_name ] = true
 	}
 	for key := range package_map { packages = append( packages , key ); }
+	return
+}
+
+func ( w *Wrapper ) GetPackages() ( packages []string ) {
+	result := w.Shell( "pm", "list" , "packages" )
+	lines := strings.Split( result , "\n" )
+	for _ , line := range lines {
+		parts := strings.Split( line , "package:" )
+		if len( parts ) < 2 { continue }
+		packages = append( packages , parts[ 1 ] )
+	}
+	return
+}
+
+func ( w *Wrapper ) GetInstalledPackages() ( packages []string ) {
+	result := w.Shell( "pm", "list" , "packages" , "-3" )
+	lines := strings.Split( result , "\n" )
+	for _ , line := range lines {
+		parts := strings.Split( line , "package:" )
+		if len( parts ) < 2 { continue }
+		packages = append( packages , parts[ 1 ] )
+	}
 	return
 }
 
