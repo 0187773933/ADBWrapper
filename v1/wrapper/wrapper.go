@@ -14,6 +14,7 @@ import (
 	"sync"
 	"sort"
 	"os"
+	// "io"
 	"context"
 	"syscall"
 	"os/exec"
@@ -103,7 +104,6 @@ func ( w *Wrapper ) GetCPUArchitecture() ( result string ) {
 	result = lines[ 0 ]
 	return
 }
-
 
 func ( w *Wrapper ) GetScreenState() ( result bool ) {
 	// Display Power: state=OFF
@@ -280,8 +280,6 @@ type Window struct {
 	IsVisible bool `json:"is_visible"`
 }
 
-
-
 var IGNORED_PACKAGES = []string{
 	"SpeechUi" ,
 	"InputMethod" ,
@@ -348,21 +346,15 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 	if len( obscuring_window_parts ) > 1 {
 		if strings.HasPrefix( obscuring_window_parts[ 1 ] , "Window{" )  {
 			obscuring_window_line := strings.Split( obscuring_window_parts[ 1 ] , "\n" )[ 0 ]
-			// fmt.Println( "we have a hidden window to deal with" )
+			// fmt.Println( "we have a hidden window" )
 			obscuring_window_line_parts := strings.Split( obscuring_window_line , " " )
 			last_part := obscuring_window_line_parts[ ( len( obscuring_window_line_parts ) - 1 ) ]
 			new_top_activity := strings.Split( last_part , "}" )[ 0 ]
 			pa_parts := strings.Split( new_top_activity , "/" )
-			x_package := ""
+			x_package := pa_parts[ 0 ]
 			x_activity := ""
-			switch len( pa_parts ) {
-				case 1:
-					x_package = pa_parts[ 0 ]
-					break;
-				case 2:
-					x_package = pa_parts[ 0 ]
-					x_activity = pa_parts[ 1 ]
-					break;
+			if len( pa_parts ) > 1 {
+				x_activity = pa_parts[ 1 ]
 			}
 			new_top_window := Window{
 				Number: 0 ,
@@ -407,6 +399,125 @@ func ( w *Wrapper ) GetPackage() ( result string ) {
 	if len( windows ) > 0 {
 		result = windows[ 0 ].Package
 	}
+	return
+}
+
+func ( w *Wrapper ) GetPackagePath( package_name string ) ( result string ) {
+	x := w.Shell( "pm" , "path" , package_name )
+	x_parts := strings.Split( x , ":" )
+	if len( x_parts ) > 1 { result = strings.TrimSpace( x_parts[ 1 ] ) }
+	return
+}
+
+func ( w *Wrapper ) PullPackageAPK( package_name string , save_path string ) {
+	package_path := w.GetPackagePath( package_name )
+	fmt.Println( "pulling" , package_path )
+	w.Exec( "pull" , package_path , save_path )
+	fmt.Println( "saved" , save_path )
+	return
+}
+
+func ( w *Wrapper ) GetPackagesActivitiesPull( package_name string ) ( activities []string ) {
+	temp_apk_file , _ := os.CreateTemp( "" , "*.apk" )
+	defer temp_apk_file.Close()
+	temp_apk_file_path := temp_apk_file.Name()
+	defer os.Remove( temp_apk_file_path )
+	package_path := w.GetPackagePath( package_name )
+	fmt.Println( "pulling" , temp_apk_file_path )
+	w.Exec( "pull" , package_path , temp_apk_file_path )
+	fmt.Println( "saved" , temp_apk_file_path )
+	args := []string{ "dump" , "xmltree" , temp_apk_file_path , "AndroidManifest.xml" }
+	result := utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "aapt" , args... )
+	// fmt.Println( result )
+	var activity string
+	lines := strings.Split( result , "\n" )
+	// re := regexp.MustCompile( `E: activity.*?A: android:name.*?Raw: "(.*?)"` )
+	for _ , line := range lines {
+		if strings.Contains( line , "E: activity" ) { activity = "prepped" }
+		if activity != "" {
+			if strings.Contains( line , "android:name" ) {
+				parts := strings.Split( line , "Raw: \"" )
+				if len( parts ) > 1 {
+					final_parts := strings.Split( parts[ 1 ] , "\")" )
+					activities = append( activities , final_parts[ 0 ] )
+				}
+				activity = ""
+			}
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) GetPackagesActivities( package_name string ) ( activities []string ) {
+	default_activity := w.GetPackagesDefaultActivity( package_name )
+	log_lines := w.GetPackagesLog( package_name )
+	seen := make( map[ string ] bool )
+	seen[ default_activity ] = true
+	activities = append( activities , default_activity )
+	package_split_part := fmt.Sprintf( "%s/" , package_name )
+	for _ , line := range log_lines {
+		line_lower := strings.ToLower( line )
+		if strings.Contains( line_lower , "main" ) == false { continue }
+		// fmt.Println( line )
+		cmp_parts := strings.Split( line , "cmp=" )
+		if len( cmp_parts ) > 1 {
+			cmp_activity_parts := strings.Split( cmp_parts[ 1 ] , package_split_part )
+			if len( cmp_activity_parts ) < 2 { continue }
+			cmp_activity := cmp_activity_parts[ 1 ]
+			cmp_activity = strings.Fields( cmp_activity )[ 0 ]
+			cmp_activity = strings.TrimSuffix( cmp_activity , "}" )
+			cmp_activity = strings.TrimPrefix( cmp_activity , "." )
+			_ , ok := seen[ cmp_activity ]
+			if ok == false {
+				seen[ cmp_activity ] = true
+				activities = append( activities , cmp_activity )
+			}
+		}
+		class_parts := strings.Split( line , "class=" )
+		if len( class_parts ) > 1 {
+			class_activity := strings.Fields( class_parts[ 1 ] )[ 0 ]
+			class_activity = strings.TrimPrefix( class_activity , "." )
+			_ , ok := seen[ class_activity ]
+			if ok == false {
+				seen[ class_activity ] = true
+				activities = append( activities , class_activity )
+			}
+		}
+	}
+
+	// fmt.Println( package_name , "quick search:" , activities )
+
+	temp_apk_file , _ := os.CreateTemp( "" , "*.apk" )
+	defer temp_apk_file.Close()
+	temp_apk_file_path := temp_apk_file.Name()
+	defer os.Remove( temp_apk_file_path )
+	package_path := w.GetPackagePath( package_name )
+	// fmt.Println( "pulling" , temp_apk_file_path )
+	w.Exec( "pull" , package_path , temp_apk_file_path )
+	// fmt.Println( "saved" , temp_apk_file_path )
+	args := []string{ "dump" , "xmltree" , temp_apk_file_path , "AndroidManifest.xml" }
+	result := utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "aapt" , args... )
+	var activity string
+	lines := strings.Split( result , "\n" )
+	for _ , line := range lines {
+		if strings.Contains( line , "E: activity" ) { activity = "prepped" }
+		if activity != "" {
+			if strings.Contains( line , "android:name" ) {
+				parts := strings.Split( line , "Raw: \"" )
+				if len( parts ) > 1 {
+					final_parts := strings.Split( parts[ 1 ] , "\")" )
+					if final_parts[ 0 ] == "" { continue }
+					_ , ok := seen[ final_parts[ 0 ] ]
+					if ok == false {
+						seen[ final_parts[ 0 ] ] = true
+						activities = append( activities , final_parts[ 0 ] )
+					}
+				}
+				activity = ""
+			}
+		}
+	}
+
 	return
 }
 
@@ -671,6 +782,19 @@ func ( w *Wrapper ) GetInstalledPackages() ( packages []string ) {
 	return
 }
 
+func ( w *Wrapper ) GetInstalledPackagesAndActivities() ( result map[string][]string ) {
+	result = make( map[string][]string )
+	installed_packages := w.GetInstalledPackages()
+	fmt.Println( "Packages:" , installed_packages )
+	total_packages := len( installed_packages )
+	for i , package_name := range installed_packages {
+		fmt.Println( "\nGetting activities for :" , package_name , "===" , ( i + 1 ) , "of" , total_packages )
+		result[ package_name ] = w.GetPackagesActivities( package_name )
+		fmt.Println( result[ package_name ] )
+	}
+	return
+}
+
 func ( w *Wrapper ) GetPackagesLog( package_name string ) ( log_lines []string ) {
 	result := w.Shell( "pm", "dump" , package_name )
 	log_lines = strings.Split( result , "\n" )
@@ -696,7 +820,7 @@ func ( w *Wrapper ) GetPackagesDefaultActivity( package_name string ) ( result s
 // aapt dump badging <pulledfile.apk>
 // https://stackoverflow.com/questions/12698814/get-launchable-activity-name-of-package-from-adb
 // https://stackoverflow.com/questions/2789462/find-package-name-for-android-apps-to-use-intent-to-launch-market-app-from-web/7502519#7502519
-func ( w *Wrapper ) GetPackagesActivities( package_name string ) ( activities []string ) {
+func ( w *Wrapper ) GetPackagesActivitiesSearch( package_name string ) ( activities []string ) {
 	default_activity := w.GetPackagesDefaultActivity( package_name )
 	log_lines := w.GetPackagesLog( package_name )
 	seen := make( map[ string ] bool )

@@ -6,7 +6,20 @@
 ## TODO
 
 - better current state meta info
-- wrap in server?
+
+## Get Activites from APK
+
+- https://stackoverflow.com/questions/6547703/list-all-activities-within-an-apk-from-the-shell
+
+1. `brew install --cask android-sdk`
+2. `export ANDROID_HOME=/usr/local/share/android-sdk`
+3. `yes | sdkmanager --licenses`
+4. `sdkmanager --list`
+5. `sdkmanager "build-tools;34.0.0"`
+6. `/usr/local/share/android-sdk/build-tools/34.0.0/aapt --version`
+7. `sudo ln -s "/usr/local/share/android-sdk/build-tools/34.0.0/aapt" /usr/local/bin/aapt`
+8. `aapt dump xmltree <apk-file> AndroidManifest.xml > apk-file.txt`
+9. `aapt list -a /path/to/the/apk > apk-file.all.txt`
 
 ## ADB Info Links
 - https://gist.github.com/mcfrojd/9e6875e1db5c089b1e3ddeb7dba0f304
