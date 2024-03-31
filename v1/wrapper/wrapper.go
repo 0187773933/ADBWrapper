@@ -35,17 +35,15 @@ import (
 	// https://github.com/denismakogon/gocv-alpine
 )
 
-
-
 const IMAGE_SIMILARITY_THRESHOLD float64 = 1.5
 const PAUSE_THRESHOLD = ( 500 * time.Millisecond )
 const EXEC_TIMEOUT = ( 1500 * time.Millisecond )
 
-func open_with_preview(imagePath string) {
-	cmd := exec.Command("open", "-a", "Preview", imagePath)
+func open_with_preview( image_path string ) {
+	cmd := exec.Command( "open" , "-a" , "Preview" , image_path )
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println("Failed to open image:", err)
+		fmt.Println( "Failed to open image:" , err )
 	}
 }
 
@@ -54,6 +52,8 @@ type Wrapper struct {
 	Serial string `json:"serial"`
 	Connected bool `json:"connected"`
 	Screen bool `json:"screen_on"`
+	CPUArchitecture string `json:"cpu_architecture"`
+	Brightness int `json:"brightness"`
 }
 
 func ConnectIP( adb_path string , host_ip string , host_port string ) ( wrapper Wrapper ) {
@@ -68,6 +68,8 @@ func ConnectIP( adb_path string , host_ip string , host_port string ) ( wrapper 
 		wrapper.Connected = false
 	}
 	// if force_screen_on == true { wrapper.ScreenOn() }
+	wrapper.GetCPUArchitecture()
+	wrapper.GetBrightness()
 	return
 }
 
@@ -76,6 +78,8 @@ func ConnectUSB( adb_path string , serial string ) ( wrapper Wrapper ) {
 	wrapper.Serial = serial
 	wrapper.Connected = true
 	// if force_screen_on == true { wrapper.ScreenOn() }
+	wrapper.GetCPUArchitecture()
+	wrapper.GetBrightness()
 	return
 }
 
@@ -102,6 +106,7 @@ func ( w *Wrapper ) GetCPUArchitecture() ( result string ) {
 	x := w.Shell( "getprop" , "ro.product.cpu.abi" )
 	lines := strings.Split( x , "\n" )
 	result = lines[ 0 ]
+	w.CPUArchitecture = result
 	return
 }
 
@@ -134,7 +139,6 @@ type Status struct {
 	Activity string `json:"activity"`
 	MediaSession MediaSession `json:"media_session"`
 }
-
 func ( w *Wrapper ) GetStatus() ( result Status ) {
 	result.DisplayOn = w.GetScreenState()
 	result.Volume = w.GetVolume()
@@ -194,13 +198,15 @@ func ( w *Wrapper ) GetMediaSessionInfo() ( result MediaSession ) {
 func ( w *Wrapper ) ScreenOn() {
 	w.Screen = w.GetScreenState()
 	if w.Screen == true { return; }
-	fmt.Println( w.PressKey( 26 ) )
+	r := w.KeyInt( 26 )
+	fmt.Println( r )
 }
 
 func ( w *Wrapper ) ScreenOff() {
 	w.Screen = w.GetScreenState()
 	if w.Screen == false { return; }
-	fmt.Println( w.PressKey( 26 ) )
+	r := w.KeyInt( 26 )
+	fmt.Println( r )
 	w.Shell( "am" , "broadcast" , "-a" , "android.intent.action.SCREEN_OFF" )
 }
 
@@ -246,7 +252,6 @@ func ( w *Wrapper ) GetVolume() ( result int ) {
 	// fmt.Printf("Current volume: %d\n")
 	return
 }
-
 
 func ( w *Wrapper ) SetVolumePercent( percent int ) {
 	output := w.Shell( "media", "volume", "--stream", "3", "--get" )
@@ -728,7 +733,7 @@ func ( w *Wrapper ) OpenURI( uri string ) ( result string ) {
 }
 
 // adb shell pm list packages
-func ( w *Wrapper ) OpenAppName( app_name string ) ( result string ) {
+func ( w *Wrapper ) OpenPackage( app_name string ) ( result string ) {
 	result = w.Shell( "monkey", "-p", app_name , "-c", "android.intent.category.LAUNCHER", "1" )
 	return
 }
@@ -738,12 +743,12 @@ func ( w *Wrapper ) OpenActivity( activity_name string ) ( result string ) {
 	return
 }
 
-func ( w *Wrapper ) CloseAppName( app_name string ) ( result string ) {
+func ( w *Wrapper ) ClosePackage( app_name string ) ( result string ) {
 	result = w.Shell( "am", "force-stop", app_name )
 	return
 }
 
-func ( w *Wrapper ) GetRunningApps() ( packages []string ) {
+func ( w *Wrapper ) GetRunningPackages() ( packages []string ) {
 	result := w.Shell( "dumpsys", "activity" )
 	lines := strings.Split( result , "\n" )
 	package_map := make( map[ string ] bool )
@@ -859,21 +864,11 @@ func ( w *Wrapper ) GetPackagesActivitiesSearch( package_name string ) ( activit
 	return
 }
 
-func ( w *Wrapper ) StopAllApps() {
-	open_apps := w.GetRunningApps()
+func ( w *Wrapper ) StopAllPackages() {
+	open_apps := w.GetRunningPackages()
 	for _ , app := range open_apps {
 		w.Shell( "am", "force-stop", app )
 	}
-	return
-}
-
-func ( w *Wrapper ) Sleep() {
-	w.Shell( "input" , "keyevent" , "KEYCODE_SLEEP" ) // 223
-	return
-}
-
-func ( w *Wrapper ) Wakeup() {
-	w.Shell( "input" , "keyevent" , "KEYCODE_WAKEUP" ) // 224
 	return
 }
 
@@ -888,13 +883,145 @@ func ( w *Wrapper ) Tap( x int , y int ) ( result string ) {
 	return
 }
 
-func ( w *Wrapper ) PressKey( key_number int ) ( result string ) {
+func ( w *Wrapper ) KeyInt( key_number int ) ( result string ) {
 	result = w.Shell( "input" , "keyevent" , strconv.Itoa( key_number ) )
 	return
 }
 
-func ( w *Wrapper ) PressKeyName( key_name string ) ( result string ) {
+func ( w *Wrapper ) Key( key_name string ) ( result string ) {
 	result = w.Shell( "input" , "keyevent" , key_name )
+	return
+}
+
+func ( w *Wrapper ) Sleep() {
+	w.Key( "KEYCODE_SLEEP" ) // 223
+	return
+}
+
+func ( w *Wrapper ) Wakeup() {
+	w.Key( "KEYCODE_WAKEUP"  ) // 224
+	return
+}
+
+func ( w *Wrapper ) Power() ( result string ) {
+	result = w.Key( "KEYCODE_POWER" )
+	return
+}
+
+// not universally supported
+func ( w *Wrapper ) PowerOff() ( result string ) {
+	result = w.Shell( "poweroff" )
+	return
+}
+
+// needs manual keypress , not even ir button works
+func ( w *Wrapper ) ForcePowerOff() ( result string ) {
+	result = w.Shell( "reboot" , "-p" )
+	return
+}
+
+func ( w *Wrapper ) Reboot() ( result string ) {
+	result = w.Exec( "reboot" )
+	return
+}
+
+func ( w *Wrapper ) EnterBootloader() ( result string ) {
+	result = w.Exec( "reboot" , "bootloader" )
+	return
+}
+
+func ( w *Wrapper ) EnterRecovery() ( result string ) {
+	result = w.Exec( "reboot" , "recovery" )
+	return
+}
+
+func ( w *Wrapper ) Up() ( result string ) {
+	result = w.Key( "KEYCODE_DPAD_UP" )
+	return
+}
+
+func ( w *Wrapper ) Down() ( result string ) {
+	result = w.Key( "KEYCODE_DPAD_DOWN" )
+	return
+}
+
+func ( w *Wrapper ) Left() ( result string ) {
+	result = w.Key( "KEYCODE_DPAD_LEFT" )
+	return
+}
+
+func ( w *Wrapper ) Right() ( result string ) {
+	result = w.Key( "KEYCODE_DPAD_RIGHT" )
+	return
+}
+
+func ( w *Wrapper ) Enter() ( result string ) {
+	result = w.Key( "KEYCODE_ENTER" )
+	return
+}
+
+func ( w *Wrapper ) Home() ( result string ) {
+	result = w.Key( "KEYCODE_HOME" )
+	return
+}
+
+func ( w *Wrapper ) Back() ( result string ) {
+	result = w.Key( "KEYCODE_BACK" )
+	return
+}
+
+func ( w *Wrapper ) PlayPause() ( result string ) {
+	result = w.Key( "KEYCODE_MEDIA_PLAY_PAUSE" )
+	return
+}
+
+func ( w *Wrapper ) Stop() ( result string ) {
+	result = w.Key( "KEYCODE_MEDIA_STOP" )
+	return
+}
+
+func ( w *Wrapper ) Play() ( result string ) {
+	result = w.Key( "KEYCODE_MEDIA_PLAY" )
+	return
+}
+
+func ( w *Wrapper ) Pause() ( result string ) {
+	result = w.Key( "KEYCODE_MEDIA_PAUSE" )
+	return
+}
+
+func ( w *Wrapper ) Next() ( result string ) {
+	result = w.Key( "KEYCODE_MEDIA_NEXT" )
+	return
+}
+
+func ( w *Wrapper ) Previous() ( result string ) {
+	result = w.Key( "KEYCODE_MEDIA_PREVIOUS" )
+	return
+}
+
+func ( w *Wrapper ) Fastforward() ( result string ) {
+	result = w.Key( "KEYCODE_MEDIA_FAST_FORWARD" )
+	return
+}
+
+func ( w *Wrapper ) Rewind() ( result string ) {
+	result = w.Key( "KEYCODE_MEDIA_REWIND" )
+	return
+}
+
+func ( w *Wrapper ) VolumeUp() ( result string ) {
+	result = w.Key( "KEYCODE_VOLUME_UP" )
+	return
+}
+
+func ( w *Wrapper ) VolumeDown() ( result string ) {
+	result = w.Key( "KEYCODE_VOLUME_DOWN" )
+	return
+}
+
+func ( w *Wrapper ) Mute() ( result string ) {
+	result = w.Key( "KEYCODE_VOLUME_MUTE" )
 	return
 }
 
@@ -911,9 +1038,39 @@ func ( w *Wrapper ) Portrait() ( result string ) {
 	return
 }
 
-func ( w *Wrapper ) Brightness( value int ) ( result string ) {
-	result = w.Shell( "settings" , "put" , "system" , "screen_brightness" , string( "0" ) )
+// 0 - 255
+func ( w *Wrapper ) GetBrightnessReal() ( result string ) {
+	result = w.Shell( "settings" , "get" , "system" , "screen_brightness" )
+	return
+}
+
+// 0 - 255
+func ( w *Wrapper ) SetBrightnessReal( value int ) ( result string ) {
+	result = w.Shell( "settings" , "put" , "system" , "screen_brightness" , strconv.Itoa( value ) )
+	return
+}
+
+// percentage
+func ( w *Wrapper ) SetBrightness( value int ) ( result string ) {
+	// result = w.Shell( "settings" , "put" , "system" , "screen_brightness" , strconv.Itoa( value ) )
 	// w.Shell( "service" , "call" , "window" , "18" , "i32" , "0" )
+	if value < 0 {
+		value = 0
+	} else if value > 100 {
+		value = 100
+	}
+	value = int( float64( value ) / 100.0 * 255.0 )
+	result = w.Shell( "settings" , "put" , "system" , "screen_brightness" , strconv.Itoa( value ) )
+	return
+}
+
+// percentage
+func ( w *Wrapper ) GetBrightness() ( result int ) {
+	x := w.Shell( "settings" , "get" , "system" , "screen_brightness" )
+	x = strings.TrimSpace( x )
+	value , _ := strconv.Atoi( x )
+	result = int( float64( value ) / 255.0 * 100.0 )
+	w.Brightness = result
 	return
 }
 

@@ -15,23 +15,23 @@ func fire_7_tablet_2019_unlock( adb *adb_wrapper.Wrapper ) {
 }
 
 func fire_7_tablet_2019_close_all_apps( adb *adb_wrapper.Wrapper ) {
-	open_apps := adb.GetRunningApps()
+	open_apps := adb.GetRunningPackages()
 	if len( open_apps ) < 1 { return; }
-	adb.PressKeyName( "KEYCODE_HOME" )
+	adb.Key( "KEYCODE_HOME" )
 	time.Sleep( 500 * time.Millisecond )
-	adb.PressKeyName( "KEYCODE_APP_SWITCH" )
+	adb.Key( "KEYCODE_APP_SWITCH" )
 	time.Sleep( 1 * time.Second )
 	for _ , app := range open_apps {
 		fmt.Println( "Closing" , app )
 		adb.Swipe( 528 , 302 , 528 , 43 )
 		time.Sleep( 1 * time.Second )
 	}
-	adb.PressKeyName( "KEYCODE_HOME" )
+	adb.Key( "KEYCODE_HOME" )
 }
 
 func example_disney_plus_sign_in( adb *adb_wrapper.Wrapper ) {
 	// adb.SaveEvents( "disney_login_1.json" )
-	adb.OpenAppName( "com.disney.disneyplus" )
+	adb.OpenPackage( "com.disney.disneyplus" )
 	adb.WaitOnScreen( "screenshots/disney_login.png" , ( 5 * time.Second ) )
 	// adb.PlaybackEvents( "disney_login_1.json" )
 	adb.Swipe( 908 , 293 , 894 , 107 )
@@ -40,12 +40,12 @@ func example_disney_plus_sign_in( adb *adb_wrapper.Wrapper ) {
 	adb.Type( "email-part-1" )
 	time.Sleep( 100 * time.Millisecond )
 	adb.Type( "email-part-2" )
-	adb.PressKey( 61 ) // TAB
+	adb.KeyInt( 61 ) // TAB
 	adb.Tap( 508 , 495 )
 	adb.Type( "password-part-1" )
 	time.Sleep( 100 * time.Millisecond )
 	adb.Type( "password-part-2" ) // First Char can't be a '#' ?
-	adb.PressKey( 66 ) // ENTER Key
+	adb.KeyInt( 66 ) // ENTER Key
 	adb.WaitOnScreen( "screenshots/disney_profile_selection.png" , ( 5 * time.Second ) )
 	adb.Tap( 741 , 245 )
 }
@@ -53,13 +53,13 @@ func example_disney_plus_sign_in( adb *adb_wrapper.Wrapper ) {
 func example_spotify_play_playlist( adb *adb_wrapper.Wrapper ) {
 
 	// fmt.Println( adb.Exec( "shell" , "dumpsys" , "media_session" ) )
-	adb.CloseAppName( "com.spotify.music" )
+	adb.ClosePackage( "com.spotify.music" )
 	time.Sleep( 1 * time.Second )
 	adb.Shell( "am" , "start" , "-n" , "com.spotify.music/com.spotify.music.MainActivity" )
 	time.Sleep( 10 * time.Second )
 	adb.OpenURI( "spotify:playlist:46CkdOm6pd6tsREVoIgZWw:play" )
 	time.Sleep( 1 * time.Second )
-	adb.PressKeyName( "KEYCODE_MEDIA_PLAY" )
+	adb.Key( "KEYCODE_MEDIA_PLAY" )
 
 	// time.Sleep( 1000 * time.Millisecond )
 	// adb.PressButtonSequence( 21 , 21 , 23 )
@@ -76,37 +76,37 @@ func example_spotify_play_playlist( adb *adb_wrapper.Wrapper ) {
 }
 
 func example_twitch( adb *adb_wrapper.Wrapper ) {
-	// fmt.Println( adb.GetRunningApps() )
-	// adb.OpenAppName( "tv.twitch.android.viewer" )
-	adb.CloseAppName( "tv.twitch.android.viewer" )
-	// adb.PressKeyName( "KEYCODE_HOME" )
+	// fmt.Println( adb.GetRunningPackages() )
+	// adb.OpenPackage( "tv.twitch.android.viewer" )
+	adb.ClosePackage( "tv.twitch.android.viewer" )
+	// adb.Key( "KEYCODE_HOME" )
 	// adb.OpenURI( fmt.Sprintf( "twitch://stream/%s" , "exbc" ) )
 	adb.OpenURI( fmt.Sprintf( "twitch://stream/%s" , "gmhansn" ) )
 	// time.Sleep( 10 * time.Second )
 }
 
 func example_youtube( adb *adb_wrapper.Wrapper ) {
-	// fmt.Println( adb.GetRunningApps() )
-	// adb.OpenAppName( "tv.twitch.android.viewer" )
-	adb.StopAllApps()
-	// adb.CloseAppName( "com.amazon.firetv.youtube" )
-	// adb.PressKeyName( "KEYCODE_HOME" )
+	// fmt.Println( adb.GetRunningPackages() )
+	// adb.OpenPackage( "tv.twitch.android.viewer" )
+	adb.StopAllPackages()
+	// adb.ClosePackage( "com.amazon.firetv.youtube" )
+	// adb.Key( "KEYCODE_HOME" )
 	// adb.OpenURI( fmt.Sprintf( "twitch://stream/%s" , "exbc" ) )
-	adb.Brightness( 0 )
+	adb.SetBrightness( 0 )
 	adb.OpenURI( "https://www.youtube.com/watch?v=bOwsLtwa2Ts" )
 	// time.Sleep( 10 * time.Second )
 }
 
 func example_disney( adb *adb_wrapper.Wrapper ) {
-	adb.StopAllApps()
-	adb.Brightness( 0 )
+	adb.StopAllPackages()
+	adb.SetBrightness( 0 )
 	adb.Shell( "am" , "start" , "-a" , "android.intent.action.VIEW" , "-d" , "" )
 	// adb.OpenURI( fmt.Sprintf( "https://www.disneyplus.com/video/%s" , "" ) )
 }
 
 func example_vlc( adb *adb_wrapper.Wrapper ) {
-	adb.StopAllApps()
-	adb.Brightness( 0 )
+	adb.StopAllPackages()
+	adb.SetBrightness( 0 )
 	adb.OpenURI( fmt.Sprintf( "vlc://%s" , "" ) )
 }
 
@@ -114,9 +114,9 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 
 	// TODO : TV Volume Off
 	// adb.SetVolumePercent( 0 )
-	adb.StopAllApps()
-	adb.Brightness( 0 )
-	adb.CloseAppName( "com.spotify.tv.android" )
+	adb.StopAllPackages()
+	adb.SetBrightness( 0 )
+	adb.ClosePackage( "com.spotify.tv.android" )
 	time.Sleep( 1 * time.Second )
 	playlist_uri := fmt.Sprintf( "spotify:playlist:%s:play" , "6ZFJWltDYCI0OVyXNleN9e" )
 	adb.OpenURI( playlist_uri )
@@ -126,7 +126,7 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 	// ( 0 , 0 ) = Top-Left
 	// adb.Screenshot( "./screenshots/spotify/shuffle_off.png" , 735 , 925 , 35 , 45 )
 
-	// adb.PressKeyName( "KEYCODE_ENTER" )
+	// adb.Key( "KEYCODE_ENTER" )
 	adb.WaitOnScreen( "./screenshots/spotify/playing.png" , ( 10 * time.Second ) , 945 , 925 , 30 , 30 )
 	fmt.Println( "Ready" )
 	time.Sleep( 1 * time.Second )
@@ -137,20 +137,20 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 		735 , 925 , 35 , 45 ,
 	)
 	if strings.Contains( shuffle_test , "off" ) {
-		adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
+		adb.Key( "KEYCODE_DPAD_LEFT" )
 		time.Sleep( 200 * time.Millisecond )
-		adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
+		adb.Key( "KEYCODE_DPAD_LEFT" )
 		time.Sleep( 200 * time.Millisecond )
-		adb.PressKeyName( "KEYCODE_ENTER" )
+		adb.Key( "KEYCODE_ENTER" )
 		time.Sleep( 200 * time.Millisecond )
-		adb.PressKeyName( "KEYCODE_MEDIA_NEXT" )
+		adb.Key( "KEYCODE_MEDIA_NEXT" )
 		// adb.SetVolumePercent( 100 )
 		time.Sleep( 200 * time.Millisecond )
-		adb.PressKeyName( "KEYCODE_DPAD_RIGHT" )
+		adb.Key( "KEYCODE_DPAD_RIGHT" )
 		time.Sleep( 200 * time.Millisecond )
-		adb.PressKeyName( "KEYCODE_DPAD_RIGHT" )
+		adb.Key( "KEYCODE_DPAD_RIGHT" )
 		time.Sleep( 200 * time.Millisecond )
-		adb.PressKeyName( "KEYCODE_DPAD_RIGHT" )
+		adb.Key( "KEYCODE_DPAD_RIGHT" )
 	} else {
 		// TODO : Turn TV Volume On
 		// adb.SetVolumePercent( 100 )
@@ -159,7 +159,7 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 	time.Sleep( 10 * time.Second )
 	adb.OpenURI( fmt.Sprintf( "spotify:playlist:%s:play" , "3UMDmO2YJb8DgUjpSBu8y9" ) )
 	time.Sleep( 500 * time.Millisecond )
-	adb.PressKeyName( "KEYCODE_MEDIA_NEXT" )
+	adb.Key( "KEYCODE_MEDIA_NEXT" )
 
 }
 
@@ -175,8 +175,8 @@ func main() {
 
 	adb := adb_wrapper.ConnectIP(
 		"/usr/local/bin/adb" ,
-		// "192.168.4.193" , // firecube
-		"192.168.4.56" , // firestick
+		"192.168.4.193" , // firecube
+		// "192.168.4.56" , // firestick
 		"5555" ,
 	)
 
@@ -185,6 +185,11 @@ func main() {
 	// 	"GCC0X8081307034C" , // firetablet
 	// )
 	utils.PrettyPrint( adb )
+
+	adb.ScreenOn()
+	adb.SetBrightness( 100 )
+	adb.Home()
+	adb.PowerOff()
 
 	// activity := adb.GetPackagesDefaultActivity( "tv.twitch.android.viewer" )
 	// fmt.Println( activity )
@@ -212,8 +217,9 @@ func main() {
 	// activities := adb.GetPackagesActivities( "tv.twitch.android.viewer" )
 	// fmt.Println( activities )
 
-	packages := adb.GetInstalledPackagesAndActivities()
-	utils.PrettyPrint( packages )
+	// packages := adb.GetInstalledPackagesAndActivities()
+	// // utils.PrettyPrint( packages )
+	// utils.WriteJSON( "./packages-firecube.json" , packages )
 
 	// windows := adb.GetWindowStack()
 	// utils.PrettyPrint( windows )
@@ -253,7 +259,7 @@ func main() {
 	// fmt.Println( string( status_json ) )
 	// fmt.Println( adb.GetCPUArchitecture() )
 
-	// adb.PressKeyName( "KEYCODE_DPAD_LEFT" )
+	// adb.Key( "KEYCODE_DPAD_LEFT" )
 	// white := color.RGBA{ R: 255 , G: 255 , B: 255 , A: 255 }
 	// // shuffle_pixel_color := adb.GetPixelColor( 752 , 964 )
 	// if adb.IsPixelTheSameColor( 752 , 964 , white ) == true {
@@ -281,14 +287,14 @@ func main() {
 	// 	fire_7_tablet_2019_unlock( &adb )
 	// }
 	// adb.DisableScreenTimeout()
-	// adb.StopAllApps()
+	// adb.StopAllPackages()
 	// fire_7_tablet_2019_close_all_apps( &adb )
-	// adb.PressKeyName( "KEYCODE_HOME" )
+	// adb.Key( "KEYCODE_HOME" )
 	// fmt.Println( "ready" )
 
 	// example_twitch( &adb )
 	// adb.ScreenOff()
-	// fmt.Println( adb.GetRunningApps() )
+	// fmt.Println( adb.GetRunningPackages() )
 	// example_youtube( &adb )
 	// example_spotify( &adb )
 
