@@ -199,14 +199,14 @@ func ( w *Wrapper ) ScreenOn() {
 	w.Screen = w.GetScreenState()
 	if w.Screen == true { return; }
 	r := w.KeyInt( 26 )
-	fmt.Println( r )
+	// fmt.Println( r )
 }
 
 func ( w *Wrapper ) ScreenOff() {
 	w.Screen = w.GetScreenState()
 	if w.Screen == false { return; }
 	r := w.KeyInt( 26 )
-	fmt.Println( r )
+	// fmt.Println( r )
 	w.Shell( "am" , "broadcast" , "-a" , "android.intent.action.SCREEN_OFF" )
 }
 
@@ -307,11 +307,14 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 				current_window = &Window{}
 				win_num_parts_one := strings.Split( line , "Window #" )
 				win_num_parts := strings.Split( win_num_parts_one[ 1 ] , " " )
+				if len( win_num_parts ) < 1 { continue }
 				current_window.Number , _ = strconv.Atoi( win_num_parts[ 0 ] )
 				parts := strings.Fields( line )
 				last_part := parts[ ( len( parts ) - 1 ) ]
 				// current_window.Activity = strings.Split( last_part , "}:" )[ 0 ]
-				pa := strings.Split( last_part , "}:" )[ 0 ]
+				x_pa := strings.Split( last_part , "}:" )
+				if len( x_pa ) < 1 { continue }
+				pa := x_pa[ 0 ]
 				// fmt.Println( pa )
 				pa_parts := strings.Split( pa , "/" )
 				current_window.Package = pa_parts[ 0 ]
@@ -354,8 +357,11 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 			// fmt.Println( "we have a hidden window" )
 			obscuring_window_line_parts := strings.Split( obscuring_window_line , " " )
 			last_part := obscuring_window_line_parts[ ( len( obscuring_window_line_parts ) - 1 ) ]
-			new_top_activity := strings.Split( last_part , "}" )[ 0 ]
-			pa_parts := strings.Split( new_top_activity , "/" )
+			new_top_activity := strings.Split( last_part , "}" )
+			if len( new_top_activity ) < 1 { continue }
+			new_top_activity_str := new_top_activity[ 0 ]
+			pa_parts := strings.Split( new_top_activity_str , "/" )
+			if len( pa_parts ) < 1 { continue }
 			x_package := pa_parts[ 0 ]
 			x_activity := ""
 			if len( pa_parts ) > 1 {
