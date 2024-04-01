@@ -374,6 +374,10 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 				IsOnScreen: true ,
 				IsVisible: true ,
 			}
+			if len( windows ) < 1 {
+				windows = append( windows , new_top_window )
+				return
+			}
 			new_window_stack := []Window{ new_top_window , windows[ 0 ] }
 			// new_index := 1
 			for _ , window := range windows[ 1 : ] {
