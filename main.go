@@ -175,8 +175,8 @@ func main() {
 
 	adb := adb_wrapper.ConnectIP(
 		"/usr/local/bin/adb" ,
-		"192.168.4.193" , // firecube
-		// "192.168.4.56" , // firestick
+		// "192.168.4.193" , // firecube
+		"192.168.4.56" , // firestick
 		"5555" ,
 	)
 
@@ -186,10 +186,10 @@ func main() {
 	// )
 	utils.PrettyPrint( adb )
 
-	adb.ScreenOn()
-	adb.SetBrightness( 100 )
-	adb.Home()
-	adb.PowerOff()
+	// adb.ScreenOn()
+	// adb.SetBrightness( 100 )
+	// adb.Home()
+	// adb.PowerOff()
 
 	// activity := adb.GetPackagesDefaultActivity( "tv.twitch.android.viewer" )
 	// fmt.Println( activity )
@@ -221,8 +221,8 @@ func main() {
 	// // utils.PrettyPrint( packages )
 	// utils.WriteJSON( "./packages-firecube.json" , packages )
 
-	// windows := adb.GetWindowStack()
-	// utils.PrettyPrint( windows )
+	windows := adb.GetWindowStack()
+	utils.PrettyPrint( windows )
 
 	// current_window := adb.GetTopWindow()
 	// utils.PrettyPrint( current_window )

@@ -577,7 +577,7 @@ func ( w *Wrapper ) GetPlaybackPositionForce() ( package_name string , position 
 	return
 }
 
-func ( w *Wrapper ) GetPlaybackPosition() ( package_name string , position int ) {
+func ( w *Wrapper ) GetPlaybackPositionTop() ( package_name string , position int ) {
 	// package_name = w.GetCurrentPackage()
 	package_name = w.GetTopWindow().Package
 	result := w.Shell( "dumpsys" , "media_session" )
@@ -596,6 +596,26 @@ func ( w *Wrapper ) GetPlaybackPosition() ( package_name string , position int )
 	}
 	return
 }
+
+func ( w *Wrapper ) GetPlaybackPosition( package_name string ) ( position int ) {
+	// package_name = w.GetCurrentPackage()
+	result := w.Shell( "dumpsys" , "media_session" )
+	lines := strings.Split( result , "\n" )
+	for line_index , line := range lines {
+		if strings.Contains( line , "active=true" ) {
+			session_type_line := lines[ ( line_index - 5 ) ]
+			if strings.Contains( session_type_line , package_name ) {
+				playback_line := lines[ ( line_index + 4 ) ]
+				position_str := strings.Split( playback_line , "position=" )[ 1 ]
+				position_str = strings.Split( position_str , "," )[ 0 ]
+				position , _ = strconv.Atoi( position_str )
+				return
+			}
+		}
+	}
+	return
+}
+
 
 // state=PlaybackState {state=1, position=0, buffered position=0, speed=1.0, updated=2195684109, actions=1049468, custom actions=[], active item id=-1, error=null}
 type PlaybackResult struct {
