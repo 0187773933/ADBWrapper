@@ -195,19 +195,19 @@ func ( w *Wrapper ) GetMediaSessionInfo() ( result MediaSession ) {
 	return
 }
 
-func ( w *Wrapper ) ScreenOn() {
+func ( w *Wrapper ) ScreenOn() ( result string ) {
 	w.Screen = w.GetScreenState()
 	if w.Screen == true { return; }
-	r := w.KeyInt( 26 )
-	// fmt.Println( r )
+	result = w.KeyInt( 26 )
+	return
 }
 
-func ( w *Wrapper ) ScreenOff() {
+func ( w *Wrapper ) ScreenOff() ( result string ) {
 	w.Screen = w.GetScreenState()
 	if w.Screen == false { return; }
-	r := w.KeyInt( 26 )
-	// fmt.Println( r )
+	result = w.KeyInt( 26 )
 	w.Shell( "am" , "broadcast" , "-a" , "android.intent.action.SCREEN_OFF" )
+	return
 }
 
 func ( w *Wrapper ) ForceScreenOn() ( screen_was_off bool ) {
@@ -358,10 +358,10 @@ func ( w *Wrapper ) GetWindowStack() ( windows []Window ) {
 			obscuring_window_line_parts := strings.Split( obscuring_window_line , " " )
 			last_part := obscuring_window_line_parts[ ( len( obscuring_window_line_parts ) - 1 ) ]
 			new_top_activity := strings.Split( last_part , "}" )
-			if len( new_top_activity ) < 1 { continue }
+			if len( new_top_activity ) < 1 { return }
 			new_top_activity_str := new_top_activity[ 0 ]
 			pa_parts := strings.Split( new_top_activity_str , "/" )
-			if len( pa_parts ) < 1 { continue }
+			if len( pa_parts ) < 1 { return }
 			x_package := pa_parts[ 0 ]
 			x_activity := ""
 			if len( pa_parts ) > 1 {
