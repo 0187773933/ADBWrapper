@@ -47,6 +47,10 @@ func open_with_preview( image_path string ) {
 	}
 }
 
+// type PlaybackHistory struct {
+// 	History []PlaybackResult `json:"history"`
+// }
+
 type Wrapper struct {
 	ADBPath string `json:"adb_path"`
 	Serial string `json:"serial"`
@@ -54,6 +58,10 @@ type Wrapper struct {
 	Screen bool `json:"screen_on"`
 	CPUArchitecture string `json:"cpu_architecture"`
 	Brightness int `json:"brightness"`
+	LogWatchContext context.Context `json:"-"`
+	LogWatchCancelFunc context.CancelFunc `json:"-"`
+	PlaybackPositions map[string]PlaybackResult `json:"-"`
+	PlaybackHistory map[string][]PlaybackResult `json:"now_playing"`
 }
 
 func ConnectIP( adb_path string , host_ip string , host_port string ) ( wrapper Wrapper ) {
@@ -70,6 +78,8 @@ func ConnectIP( adb_path string , host_ip string , host_port string ) ( wrapper 
 	// if force_screen_on == true { wrapper.ScreenOn() }
 	wrapper.GetCPUArchitecture()
 	wrapper.GetBrightness()
+	// wrapper.LogWatchContext , wrapper.LogWatchCancelFunc = context.WithCancel( context.Background() )
+	// go wrapper.WatchLog()
 	return
 }
 
@@ -80,6 +90,8 @@ func ConnectUSB( adb_path string , serial string ) ( wrapper Wrapper ) {
 	// if force_screen_on == true { wrapper.ScreenOn() }
 	wrapper.GetCPUArchitecture()
 	wrapper.GetBrightness()
+	// wrapper.LogWatchContext , wrapper.LogWatchCancelFunc = context.WithCancel( context.Background() )
+	// go wrapper.WatchLog()
 	return
 }
 
@@ -131,6 +143,45 @@ func ( w *Wrapper ) GetScreenState() ( result bool ) {
 		}
 	}
 	return
+}
+
+// basically only for media updates
+func ( w *Wrapper ) WatchLog() {
+	cmd := exec.Command( w.ADBPath , "-s", w.Serial , "logcat" )
+	stdout , err := cmd.StdoutPipe()
+	if err != nil {
+		fmt.Println( "Error creating StdoutPipe for Cmd" , err )
+		return
+	}
+	if err := cmd.Start(); err != nil {
+		fmt.Println( "Error starting Cmd" , err )
+		return
+	}
+	scanner := bufio.NewScanner( stdout )
+	go func() {
+		for scanner.Scan() {
+			select {
+			case <-w.LogWatchContext.Done():
+				fmt.Println( "Stopping logcat watch" )
+				return
+			default:
+				line := scanner.Text()
+				// line_lower := strings.ToLower( line )
+				if strings.Contains( line , "onMetadataChanged" ) {
+					fmt.Println( "onMetadataChanged()" , line )
+				} else if strings.Contains( line , "onPlaybackStateChanged" ) {
+					fmt.Println( "onPlaybackStateChanged()" , line )
+				}
+				// } else if strings.Contains( line_lower , "media" ) {
+					// fmt.Println( "media" , line )
+				// }
+			}
+		}
+	}()
+	<-w.LogWatchContext.Done()
+	if err := cmd.Process.Kill(); err != nil {
+		fmt.Println( "Failed to kill logcat process:" , err )
+	}
 }
 
 type Status struct {
@@ -536,53 +587,13 @@ func ( w *Wrapper ) GetPackagesActivities( package_name string ) ( activities []
 	return
 }
 
-// func ( w *Wrapper ) GetCurrentPackage() ( result string ) {
-// 	// result = w.Shell( "dumpsys" , "window" , "windows" )
-// 	// for _ , line := range strings.Split( result , "\n" ) {
-// 	// 	if strings.Contains( line , "mCurrentFocus" ) {
-// 	// 		parts := strings.Fields( line )
-// 	// 		last_part := parts[ ( len( parts ) - 1 ) ]
-// 	// 		result = strings.Split( last_part , "}" )[ 0 ]
-// 	// 		result = strings.Split( last_part , "/" )[ 0 ]
-// 	// 		break
-// 	// 	}
-// 	// }
-// 	window := w.GetTopWindow()
-// 	result = window.Activity
-// 	return
-// }
-
-func ( w *Wrapper ) GetPlaybackPositionForce() ( package_name string , position int ) {
-	// package_name = w.GetCurrentPackage()
-	package_name = w.GetTopWindow().Package
-
-	// the only way to get media_session to update is after user interaction ( pause , resume )
-	// pausing is fine on hulu movies/tv , but *can* break on twitch livestreams
-	// TODO = check if livestream needs restarted
-	w.Shell( "input" , "keyevent" , "KEYCODE_MEDIA_PLAY_PAUSE" , "KEYCODE_MEDIA_PLAY_PAUSE" )
-	result := w.Shell( "dumpsys" , "media_session" )
-	lines := strings.Split( result , "\n" )
-	for line_index , line := range lines {
-		if strings.Contains( line , "active=true" ) {
-			session_type_line := lines[ ( line_index - 5 ) ]
-			if strings.Contains( session_type_line , package_name ) {
-				playback_line := lines[ ( line_index + 4 ) ]
-				position_str := strings.Split( playback_line , "position=" )[ 1 ]
-				position_str = strings.Split( position_str , "," )[ 0 ]
-				position , _ = strconv.Atoi( position_str )
-				return
-			}
-		}
-	}
-	return
-}
-
 func ( w *Wrapper ) GetPlaybackPositionTop() ( package_name string , position int ) {
 	// package_name = w.GetCurrentPackage()
 	package_name = w.GetTopWindow().Package
 	result := w.Shell( "dumpsys" , "media_session" )
 	lines := strings.Split( result , "\n" )
 	for line_index , line := range lines {
+		// fmt.Println( line_index , line )
 		if strings.Contains( line , "active=true" ) {
 			session_type_line := lines[ ( line_index - 5 ) ]
 			if strings.Contains( session_type_line , package_name ) {
@@ -597,21 +608,53 @@ func ( w *Wrapper ) GetPlaybackPositionTop() ( package_name string , position in
 	return
 }
 
-func ( w *Wrapper ) GetPlaybackPosition( package_name string ) ( position int ) {
-	// package_name = w.GetCurrentPackage()
-	result := w.Shell( "dumpsys" , "media_session" )
-	lines := strings.Split( result , "\n" )
-	for line_index , line := range lines {
-		if strings.Contains( line , "active=true" ) {
-			session_type_line := lines[ ( line_index - 5 ) ]
-			if strings.Contains( session_type_line , package_name ) {
-				playback_line := lines[ ( line_index + 4 ) ]
-				position_str := strings.Split( playback_line , "position=" )[ 1 ]
-				position_str = strings.Split( position_str , "," )[ 0 ]
-				position , _ = strconv.Atoi( position_str )
-				return
+func ( w *Wrapper ) GetNowPlaying( player_name string , timeout_seconds int ) ( positions map[string]PlaybackResult ) {
+	positions = w.FindPlayers( player_name )
+	if len( positions ) < 1 { return }
+	if timeout_seconds < 1 {
+		return
+	}
+	time.Sleep( 200 * time.Millisecond )
+	for x := 0 ; x < timeout_seconds; x++ {
+		new_positions := w.FindPlayers( player_name )
+		// utils.PrettyPrint( new_positions )
+		for key , _ := range new_positions {
+			if new_positions[ key ] != positions[ key ] {
+				// fmt.Println( key , "changed" , positions[ key ] , new_positions[ key ] )
+				return new_positions
+			} else {
+				fmt.Println( "nothing updated" )
 			}
 		}
+		positions = new_positions
+		time.Sleep( 200 * time.Millisecond )
+	}
+	return
+}
+
+func ( w *Wrapper ) GetNowPlayingForce( player_name string , retries int ) ( positions map[string]PlaybackResult ) {
+	positions = w.FindPlayers( player_name )
+	if len( positions ) < 1 { return }
+	if retries < 1 {
+		return
+	}
+	time.Sleep( 200 * time.Millisecond )
+	for x := 0; x < retries; x++ {
+		fmt.Println( "try" , ( x + 1 ) , "of" , retries )
+		new_positions := w.FindPlayers( player_name )
+		for key , _ := range new_positions {
+			if new_positions[ key ] != positions[ key ] {
+				return new_positions
+			}
+		}
+		positions = new_positions
+		if x > 1 && x % 12 == 0 {
+			fmt.Println( x , "still haven't seen time update. trying pause / play to trigger time update" )
+			w.Pause()
+			time.Sleep( 100 * time.Millisecond )
+			w.Play()
+		}
+		time.Sleep( 200 * time.Millisecond )
 	}
 	return
 }
@@ -624,6 +667,7 @@ type PlaybackResult struct {
 	State string `json:"state"`
 	Position int `json:"position"`
 	Updated int `json:"updated"`
+	ID string `json:"id"` // custom id for tracking
 }
 func parse_playback_line( line string ) ( result PlaybackResult ) {
 	position_str_parts := strings.Split( line , "position=" )
@@ -668,7 +712,7 @@ func ( w *Wrapper ) GetPlaybackPositions() ( result map[string]PlaybackResult ) 
 	lines := strings.Split( ms_result , "\n" )
 	for line_index , line := range lines {
 		// fmt.Println( line_index , line )
-		if strings.Contains( line , "active=true" ) {
+		if strings.Contains( line , "active=" ) {
 			session_type_line := lines[ ( line_index - 5 ) ]
 			session_type_line = strings.TrimSpace( session_type_line )
 			session_parts := strings.Fields( session_type_line )
@@ -678,36 +722,243 @@ func ( w *Wrapper ) GetPlaybackPositions() ( result map[string]PlaybackResult ) 
 			x := parse_playback_line( lines[ ( line_index + 4 ) ] )
 			x.PackageStr = package_str
 			x.Type = type_str
-			result[ type_str ] = x
+			x.ID = utils.Sha256( fmt.Sprintf( "%s-%s" , type_str , package_str ) )
+			result[ x.ID ] = x
 		}
 	}
 	return
 }
 
 func ( w *Wrapper ) GetUpdatedPlaybackPosition( x_input PlaybackResult ) ( result PlaybackResult ) {
-	ms_result := w.Shell( "dumpsys" , "media_session" )
-	lines := strings.Split( ms_result , "\n" )
-	for line_index , line := range lines {
-		if strings.Contains( line , "active=true" ) {
-			session_type_line := lines[ ( line_index - 5 ) ]
-			session_type_line = strings.TrimSpace( session_type_line )
-			session_parts := strings.Fields( session_type_line )
-			type_str := strings.ToLower( session_parts[ 0 ] )
-			if type_str != x_input.Type { continue; }
-			result = parse_playback_line( lines[ ( line_index + 4 ) ] )
-			result.PackageStr = x_input.PackageStr
-			result.Type = type_str
+	updated_positions := w.GetPlaybackPositions()
+	for _ , x := range updated_positions {
+		if x.PackageStr == x_input.PackageStr && x.Type == x_input.Type {
+			result = x
 			return
 		}
 	}
 	return
 }
 
-func ( w *Wrapper ) WaitOnUpdatedPlaybackPosition( x_input PlaybackResult ) ( result PlaybackResult ) {
-	max_tries := 30
-	for i := 0; i < max_tries; i++ {
-		// fmt.Println( "attempt" , i , "of" , max_tries )
+func ( w *Wrapper ) FindPlayers( player_name string ) ( result map[ string ]PlaybackResult ) {
+	player_name = strings.ToLower( player_name )
+	result = make( map[ string ]PlaybackResult )
+	positions := w.GetPlaybackPositions()
+	for k , v := range positions {
+		if k == player_name {
+			if _ , ok := result[ k ]; !ok {
+				result[ k ] = v
+			}
+		}
+		if strings.Contains( k , player_name ) {
+			if _ , ok := result[ k ]; !ok {
+				result[ k ] = v
+			}
+		}
+		if strings.Contains( v.PackageStr , player_name ) {
+			if _ , ok := result[ k ]; !ok {
+				result[ k ] = v
+			}
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) WaitOnPlayers( player_name string , timeout_seconds int ) ( result map[ string ]PlaybackResult ) {
+	player_name = strings.ToLower( player_name )
+	result = make( map[ string ]PlaybackResult )
+	timeout := time.Duration( timeout_seconds ) * time.Second
+	timer := time.NewTimer( timeout )
+	ticker := time.NewTicker( 500 * time.Millisecond )
+	defer ticker.Stop()
+	for {
+		select {
+			case <-ticker.C:
+				positions := w.GetPlaybackPositions()
+				// fmt.Println( "positions" , positions )
+				for k , v := range positions {
+					if k == player_name {
+						if _ , ok := result[ k ]; !ok {
+							result[ k ] = v
+						}
+					}
+					if strings.Contains( k , player_name ) {
+						if _ , ok := result[ k ]; !ok {
+							result[ k ] = v
+						}
+					}
+					if strings.Contains( v.PackageStr , player_name ) {
+						if _ , ok := result[ k ]; !ok {
+							result[ k ] = v
+						}
+					}
+				}
+				if len( result ) > 0 {
+					return
+				}
+			case <-timer.C:
+				fmt.Println( "Timeout reached for player" , player_name )
+				return
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) WaitOnPlayersPlaying( player_name string , timeout_seconds int ) ( result map[ string ]PlaybackResult ) {
+	player_name = strings.ToLower( player_name )
+	result = make( map[ string ]PlaybackResult )
+	timeout := time.Duration( timeout_seconds ) * time.Second
+	timer := time.NewTimer( timeout )
+	ticker := time.NewTicker( 200 * time.Millisecond )
+	defer ticker.Stop()
+	for {
+		select {
+			case <-ticker.C:
+				positions := w.GetPlaybackPositions()
+				// fmt.Println( "positions" , positions )
+				for k , v := range positions {
+					if k == player_name {
+						if _ , ok := result[ k ]; !ok {
+							if v.State == "playing" {
+								result[ k ] = v
+							}
+						}
+					}
+					if strings.Contains( k , player_name ) {
+						if _ , ok := result[ k ]; !ok {
+							if v.State == "playing" {
+								result[ k ] = v
+							}
+						}
+					}
+					if strings.Contains( v.PackageStr , player_name ) {
+						if _ , ok := result[ k ]; !ok {
+							if v.State == "playing" {
+								result[ k ] = v
+							}
+						}
+					}
+				}
+				if len( result ) > 0 {
+					return
+				}
+			case <-timer.C:
+				fmt.Println( "Timeout reached for player" , player_name )
+				return
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) WaitOnPlayersUpdated( player_name string , last_updated_time int , timeout_seconds int ) ( result map[ string ]PlaybackResult ) {
+	player_name = strings.ToLower( player_name )
+	result = make( map[ string ]PlaybackResult )
+	timeout := time.Duration( timeout_seconds ) * time.Second
+	timer := time.NewTimer( timeout )
+	ticker := time.NewTicker( 200 * time.Millisecond )
+	defer ticker.Stop()
+	for {
+		select {
+			case <-ticker.C:
+				positions := w.GetPlaybackPositions()
+				// fmt.Println( "positions" , positions )
+				for k , v := range positions {
+					if k == player_name {
+						if _ , ok := result[ k ]; !ok {
+							if v.Updated > last_updated_time {
+								result[ k ] = v
+							}
+						}
+					}
+					if strings.Contains( k , player_name ) {
+						if _ , ok := result[ k ]; !ok {
+							if v.Updated > last_updated_time {
+								result[ k ] = v
+							}
+						}
+					}
+					if strings.Contains( v.PackageStr , player_name ) {
+						if _ , ok := result[ k ]; !ok {
+							if v.Updated > last_updated_time {
+								result[ k ] = v
+							}
+						}
+					}
+				}
+				if len( result ) > 0 {
+					return
+				}
+			case <-timer.C:
+				fmt.Println( "Timeout reached for player" , player_name )
+				return
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) WaitOnPlayersUpdatedForce( player_name string , last_updated_time int , timeout_seconds int ) ( result map[ string ]PlaybackResult ) {
+	player_name = strings.ToLower( player_name )
+	result = make( map[ string ]PlaybackResult )
+	timeout := time.Duration( timeout_seconds ) * time.Second
+	timer := time.NewTimer( timeout )
+	ticker := time.NewTicker( 200 * time.Millisecond )
+	iterations := 0
+	defer ticker.Stop()
+	// fmt.Println( "last updated time" , last_updated_time )
+	for {
+		select {
+			case <-ticker.C:
+				positions := w.GetPlaybackPositions()
+				iterations += 1
+				// fmt.Println( "positions" , positions )
+				for k , v := range positions {
+					if k == player_name {
+						if _ , ok := result[ k ]; !ok {
+							if v.Updated > last_updated_time {
+								// fmt.Println( "last updated time" , last_updated_time , v.Updated )
+								result[ k ] = v
+							}
+						}
+					}
+					if strings.Contains( k , player_name ) {
+						if _ , ok := result[ k ]; !ok {
+							if v.Updated > last_updated_time {
+								// fmt.Println( "last updated time" , last_updated_time , v.Updated )
+								result[ k ] = v
+							}
+						}
+					}
+					if strings.Contains( v.PackageStr , player_name ) {
+						if _ , ok := result[ k ]; !ok {
+							if v.Updated > last_updated_time {
+								// fmt.Println( "last updated time" , last_updated_time , v.Updated )
+								result[ k ] = v
+							}
+						}
+					}
+				}
+				if len( result ) > 0 {
+					return
+				} else {
+					if iterations > 1 && iterations % 12 == 0 {
+						fmt.Println( iterations , "still haven't seen time update. trying pause / play to trigger time update" )
+						w.Pause()
+						time.Sleep( 100 * time.Millisecond )
+						w.Play()
+					}
+				}
+			case <-timer.C:
+				fmt.Println( "Timeout reached for player" , player_name )
+				return
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) WaitOnUpdatedPlaybackPosition( x_input PlaybackResult , attempts int ) ( result PlaybackResult ) {
+	for i := 0; i < attempts; i++ {
 		result = w.GetUpdatedPlaybackPosition( x_input )
+		fmt.Println( "attempt" , i , "of" , attempts , "===" , result )
 		if result.Position != x_input.Position {
 			return
 		}
@@ -850,9 +1101,6 @@ func ( w *Wrapper ) GetPackagesDefaultActivity( package_name string ) ( result s
 	return
 }
 
-// really you need to pull/dump apk and extract stuff from manifest
-// adb pull .apk path
-// aapt dump badging <pulledfile.apk>
 // https://stackoverflow.com/questions/12698814/get-launchable-activity-name-of-package-from-adb
 // https://stackoverflow.com/questions/2789462/find-package-name-for-android-apps-to-use-intent-to-launch-market-app-from-web/7502519#7502519
 func ( w *Wrapper ) GetPackagesActivitiesSearch( package_name string ) ( activities []string ) {

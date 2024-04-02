@@ -164,6 +164,67 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 }
 
 
+func fire_7_tablet_2019_netflix( adb *adb_wrapper.Wrapper ) {
+	// netflix_package := "com.netflix.ninja"
+	netflix_package := "com.netflix.mediaclient"
+	// netflix_source_activity := "com.netflix.ninja/.MainActivity"
+	netflix_source_activity := "com.netflix.mediaclient/.ui.launch.NetflixComLaunchActivity"
+	uri := "https://www.netflix.com/watch/80223868?trackId=14315607"
+	fmt.Println( uri )
+	adb_status := adb.GetStatus()
+	fmt.Println( adb_status )
+	adb.StopAllPackages()
+	adb.ClosePackage( netflix_package )
+	time.Sleep( 500 * time.Millisecond )
+	adb.OpenPackage( netflix_package )
+	adb.Shell(
+		"am" , "start" , "-c" , "android.intent.category.LEANBACK_LAUNCHER" ,
+		"-a" , "android.intent.action.VIEW" , "-d" , uri ,
+		"-f" , "0x10008000" ,
+		"-e" , "source" , "30" , netflix_source_activity ,
+	)
+
+	// have to treat everything as nested / transparent windows on top of windows
+	// players on top of players
+	// so everything is in a map
+	// mostly only firetablet ( older android ) has these proxy objects
+
+	// players := adb.FindPlayers( "netflix" )
+	fmt.Println( "waiting 20 seconds for netflix player to appear" )
+	netflix_players := adb.WaitOnPlayers( "netflix" , 20 )
+	if len( netflix_players ) < 1 {
+		fmt.Println( "never started playing , we might have to try play button" )
+	}
+	fmt.Println( "netflix player should be ready" )
+	utils.PrettyPrint( netflix_players )
+	fmt.Println( "waiting 10 seconds to see if netflix auto starts playing" )
+	playing := adb.WaitOnPlayersPlaying( "netflix" , 10 )
+	if len( playing ) < 1 {
+		fmt.Println( "never started playing , we might have to try play button" )
+	}
+	utils.PrettyPrint( playing )
+	fmt.Println( "total now playing" , len( playing ) )
+	// x := adb.GetNowPlaying( "netflix" , 60 )
+	// x := adb.GetNowPlayingForce( "netflix" , 60 )
+	for _ , player := range playing {
+		if player.Updated > 0 {
+			fmt.Println( "netflix autostarted playing on it's own" )
+			return
+		}
+	}
+	fmt.Println( "trying to force update adb playback state" )
+	for _ , player := range playing {
+		playing = adb.WaitOnPlayersUpdatedForce( "netflix" , player.Updated , 60 )
+		utils.PrettyPrint( playing )
+	}
+	fmt.Println( "trying to force update adb playback state" )
+	for _ , player := range playing {
+		playing = adb.WaitOnPlayersUpdatedForce( "netflix" , player.Updated , 60 )
+		utils.PrettyPrint( playing )
+	}
+}
+
+
 // brew install opencv@4
 // brew link --force opencv@4
 // export PKG_CONFIG_PATH="/usr/local/opt/opencv@4/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -173,18 +234,20 @@ func example_spotify( adb *adb_wrapper.Wrapper ) {
 
 func main() {
 
-	adb := adb_wrapper.ConnectIP(
-		"/usr/local/bin/adb" ,
-		// "192.168.4.193" , // firecube
-		"192.168.4.56" , // firestick
-		"5555" ,
-	)
-
-	// adb := adb_wrapper.ConnectUSB(
+	// adb := adb_wrapper.ConnectIP(
 	// 	"/usr/local/bin/adb" ,
-	// 	"GCC0X8081307034C" , // firetablet
+	// 	"192.168.4.193" , // firecube
+	// 	// "192.168.4.56" , // firestick
+	// 	"5555" ,
 	// )
+
+	adb := adb_wrapper.ConnectUSB(
+		"/usr/local/bin/adb" ,
+		"GCC0X8081307034C" , // firetablet
+	)
 	utils.PrettyPrint( adb )
+	// time.Sleep( 5 * time.Minute )
+	fire_7_tablet_2019_netflix( &adb )
 
 	// adb.ScreenOn()
 	// adb.SetBrightness( 100 )
@@ -221,8 +284,8 @@ func main() {
 	// // utils.PrettyPrint( packages )
 	// utils.WriteJSON( "./packages-firecube.json" , packages )
 
-	windows := adb.GetWindowStack()
-	utils.PrettyPrint( windows )
+	// windows := adb.GetWindowStack()
+	// utils.PrettyPrint( windows )
 
 	// current_window := adb.GetTopWindow()
 	// utils.PrettyPrint( current_window )
@@ -231,6 +294,27 @@ func main() {
 	// adb.ScreenshotToFile( "screenshots/spotify/new_position_5.png" )
 
 	// adb.GetCurrentPackage()
+
+	// positions := adb.GetPlaybackPositions()
+	// utils.PrettyPrint( positions )
+	// time.Sleep( 1 * time.Second )
+	// adb.Pause()
+	// time.Sleep( 100 * time.Millisecond )
+	// adb.Play()
+	// new_positions := adb.GetPlaybackPositions()
+	// for key , _ := range positions {
+	// 	if new_positions[ key ] != positions[ key ] {
+	// 		fmt.Println( key , "changed" , positions[ key ] , new_positions[ key ] )
+	// 	}
+	// }
+
+	// updated := adb.GetUpdatedPlaybackPosition( positions[ "playbackmediasessionwrapper" ] )
+	// updated := adb.WaitOnUpdatedPlaybackPosition( positions[ "playbackmediasessionwrapper" ] )
+	// utils.PrettyPrint( updated )
+	// updated_positions := adb.GetPlaybackPositions()
+	// utils.PrettyPrint( updated_positions )
+	// test , pos := adb.GetPlaybackPositionForce()
+	// fmt.Println( test , pos )
 
 	// fmt.Println( adb.GetPlaybackPosition() )
 	// positions := adb.GetPlaybackPositions()

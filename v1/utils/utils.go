@@ -3,6 +3,8 @@ package utils
 import (
 	// "os"
 	"os/exec"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
 	"fmt"
@@ -123,6 +125,14 @@ func ExecProcessAndGetOutputLines( bash_command string , arguments ...string ) (
 	result := string( out[:] )
 	non_empty_lines := strings.Replace( result , "\n\n" , "\n" , -1 )
 	lines = strings.Split( non_empty_lines , "\n" )
+	return
+}
+
+func Sha256( x_input string ) ( result string ) {
+	hash := sha256.New()
+	hash.Write( []byte( x_input ) )
+	hashed_bytes := hash.Sum( nil )
+	result = hex.EncodeToString( hashed_bytes )
 	return
 }
 
