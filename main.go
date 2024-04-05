@@ -245,9 +245,19 @@ func main() {
 		"/usr/local/bin/adb" ,
 		"GCC0X8081307034C" , // firetablet
 	)
-	utils.PrettyPrint( adb )
+	start := time.Now()
+	status := adb.GetStatus()
+	elapsed := time.Since( start )
+	utils.PrettyPrint( status )
+	fmt.Println( "GetStatus() took" , elapsed )
+	start = time.Now()
+	status.ScreenShot = adb.ScreenshotToBytes()
+	fmt.Println( "ScreenshotToBytes()" , len( status.ScreenShot ) , "took an extra" , time.Since( start ) )
+	// adb.ScreenshotToFile( "test.png" )
+
+
 	// time.Sleep( 5 * time.Minute )
-	fire_7_tablet_2019_netflix( &adb )
+	// fire_7_tablet_2019_netflix( &adb )
 
 	// adb.ScreenOn()
 	// adb.SetBrightness( 100 )

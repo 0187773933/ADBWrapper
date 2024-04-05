@@ -6,6 +6,7 @@
 ## TODO
 
 - better current state meta info
+- https://github.com/tsynik/LeanbackLauncher/tree/kotlinx
 
 ## Get Activites from APK
 

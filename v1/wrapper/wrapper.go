@@ -189,12 +189,18 @@ type Status struct {
 	Volume int `json:"volume"`
 	Activity string `json:"activity"`
 	MediaSession MediaSession `json:"media_session"`
+	PlaybackPositions map[string]PlaybackResult `json:"playback_positions"`
+	WindowStack []Window `json:"window_stack"`
+	ScreenShot []byte `json:"screenshot"`
 }
 func ( w *Wrapper ) GetStatus() ( result Status ) {
 	result.DisplayOn = w.GetScreenState()
 	result.Volume = w.GetVolume()
 	result.Activity = w.GetActivity()
 	result.MediaSession = w.GetMediaSessionInfo()
+	result.PlaybackPositions = w.GetPlaybackPositions()
+	result.WindowStack = w.GetWindowStack()
+	// result.ScreenShot = w.ScreenshotToBytes() // takes too long , extra 1.5 seconds
 	return
 }
 
@@ -215,11 +221,18 @@ func ( w *Wrapper ) GetMediaSessionInfo() ( result MediaSession ) {
 	for line_index , line := range media_session_dump_lines {
 		if strings.Contains( line , "active=true" ) {
 			session_type_line := media_session_dump_lines[ ( line_index - 5 ) ]
-			if strings.Contains( session_type_line , "bluetooth" ) { continue; }
+			session_type_line = strings.TrimSpace( session_type_line )
+			session_type_line_lower := strings.ToLower( session_type_line )
+			if strings.Contains( session_type_line_lower , "bluetooth" ) { continue; }
+			if strings.Contains( session_type_line_lower , "ttsplayer" ) { continue; }
 			session := strings.Split( session_type_line , " " )
 			session = utils.RemoveEmpties( session )
 			result.Type = session[ 0 ]
 			result.Activity = session[ 1 ]
+			package_parts := strings.Split( result.Activity , "/" )
+			if len( package_parts ) > 1 {
+				result.Package = package_parts[ 0 ]
+			}
 			state_line := media_session_dump_lines[ ( line_index + 4 ) ]
 			state_key_values := strings.Split( state_line , "," )
 			state_key_values = utils.RemoveEmpties( state_key_values )
@@ -1418,7 +1431,7 @@ func ( w *Wrapper ) ScreenshotToBytes( crop ...int ) ( result []byte ) {
 	random_number := ( rand.Intn( 9000000 ) + 1000000 )
 	temp_file , _ := ioutil.TempFile( "" , fmt.Sprintf( "%d-" , random_number ) )
 	temp_save_path := temp_file.Name()
-	defer os.Remove( temp_save_path )
+	// defer os.Remove( temp_save_path )
 	utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
 		fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , temp_save_path ) ,
 	)
@@ -1434,13 +1447,12 @@ func ( w *Wrapper ) ScreenshotToBytes( crop ...int ) ( result []byte ) {
 	previous_size := int64( -1 )
 	for {
 		file_info , err := os.Stat( temp_save_path )
-		if err != nil { return }
+		if err != nil { fmt.Println( err ); return }
 		size := file_info.Size()
 		if size == previous_size { break } // File size has not changed; assuming it's done writing
 		previous_size = size
 		time.Sleep( 20 * time.Millisecond )
 	}
-	// fmt.Println( "Screen Shot Captured" )
 
 	image_bytes , _ := ioutil.ReadFile( temp_save_path )
 
@@ -1459,6 +1471,8 @@ func ( w *Wrapper ) ScreenshotToBytes( crop ...int ) ( result []byte ) {
 	var crop_buffer bytes.Buffer
 	png.Encode( &crop_buffer , crop_img )
 	result = crop_buffer.Bytes()
+	fmt.Println( "Screen Shot Captured" , len( result ) )
+	os.Remove( temp_save_path )
 	return
 }
 
