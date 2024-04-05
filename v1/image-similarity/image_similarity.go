@@ -1,7 +1,7 @@
 package image_similarity
 
 import (
-	// "fmt"
+	"fmt"
 	"math"
 	"gocv.io/x/gocv"
 	"image"
@@ -40,7 +40,7 @@ func featuresInSegment(img gocv.Mat, mask gocv.Mat, hist gocv.Mat) ([]float64, e
 
 func GetFeatureVectorFromFilePath( image_path string ) ( features []float64 ) {
 	img := gocv.IMRead( image_path , gocv.IMReadColor)
-	if img.Empty() { panic( "image is empty" ) }
+	if img.Empty() { fmt.Println( "image is empty" ); img.Close(); return }
 	defer img.Close()
 
 	// convert img to hsv color space
@@ -96,7 +96,7 @@ func GetFeatureVectorFromFilePath( image_path string ) ( features []float64 ) {
 
 func GetFeatureVector( image_bytes []byte ) ( features []float64 ) {
 	img , _ := gocv.IMDecode( image_bytes , gocv.IMReadColor )
-	if img.Empty() { panic( "image is empty" ) }
+	if img.Empty() { fmt.Println( "image is empty" ); img.Close(); return }
 	defer img.Close()
 
 	// convert img to hsv color space
