@@ -151,18 +151,14 @@ func GetFeatureVector( image_bytes []byte ) ( features []float64 ) {
 	return
 }
 
-
-
 // https://stats.stackexchange.com/questions/470720/why-is-it-called-chi2-distance-kernel#471093
 func chi2Distance(v1, v2 []float64) float64 {
 	d := 0.
 	min := int(math.Min(float64(len(v1)), float64(len(v2))))
-
 	for i := 0; i < min; i++ {
 		distance := math.Pow(v1[i]-v2[i], 2) / (v1[i] + v2[i] + 1e-10)
 		d += distance
 	}
-
 	return d * 0.5
 }
 

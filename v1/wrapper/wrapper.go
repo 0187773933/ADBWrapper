@@ -1507,6 +1507,7 @@ func ( w *Wrapper ) IsPixelTheSameColor( x int , y int , x_color color.Color ) (
 }
 
 func ( w *Wrapper ) CurrentScreenSimilarityToReferenceImage( reference_image_path string , crop ...int ) ( distance float64 ) {
+	distance = -1.0
 	try.This(func() {
 		current_screen_features := w.ScreenshotToFeatures( crop... )
 		reference_image_features := image_similarity.GetFeatureVectorFromFilePath( reference_image_path )
