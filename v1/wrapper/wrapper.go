@@ -1511,6 +1511,9 @@ func ( w *Wrapper ) CurrentScreenSimilarityToReferenceImage( reference_image_pat
 	try.This(func() {
 		current_screen_features := w.ScreenshotToFeatures( crop... )
 		reference_image_features := image_similarity.GetFeatureVectorFromFilePath( reference_image_path )
+		if len( current_screen_features ) == 0 || len( reference_image_features ) == 0 {
+			return
+		}
 		distance = image_similarity.CalculateDistance( current_screen_features , reference_image_features )
 	}).Catch( func( e try.E ) {
 		fmt.Println( e )
