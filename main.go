@@ -6,6 +6,7 @@ import (
 	"strings"
 	// "encoding/json"
 	// color "image/color"
+	image_similarity "github.com/0187773933/ADBWrapper/v1/image-similarity"
 	adb_wrapper "github.com/0187773933/ADBWrapper/v1/wrapper"
 	utils "github.com/0187773933/ADBWrapper/v1/utils"
 )
@@ -245,14 +246,24 @@ func main() {
 		"/usr/local/bin/adb" ,
 		"GCC0X8081307034C" , // firetablet
 	)
-	start := time.Now()
-	status := adb.GetStatus()
-	elapsed := time.Since( start )
-	utils.PrettyPrint( status )
-	fmt.Println( "GetStatus() took" , elapsed )
-	start = time.Now()
-	status.ScreenShot = adb.ScreenshotToBytes()
-	fmt.Println( "ScreenshotToBytes()" , len( status.ScreenShot ) , "took an extra" , time.Since( start ) )
+
+	pss := "/Users/morpheous/WORKSPACE/GO/FireC2Server/SAVE_FILES/screenshots/disney/profile_selection.png"
+	pss_features := image_similarity.GetFeatureVectorFromFilePath( pss )
+	screenshot_bytes := adb.ScreenshotToBytes()
+	screenshot_features := adb.ImageBytesToFeatures( &screenshot_bytes )
+	distance := image_similarity.CalculateDistancePoint( &screenshot_features , &pss_features )
+	utils.PrettyPrint( distance )
+	pixel_color := adb.GetPixelColorFromImageBytes( &screenshot_bytes , 896 , 469 )
+	utils.PrettyPrint( pixel_color )
+
+	// start := time.Now()
+	// status := adb.GetStatus()
+	// elapsed := time.Since( start )
+	// utils.PrettyPrint( status )
+	// fmt.Println( "GetStatus() took" , elapsed )
+	// start = time.Now()
+	// status.ScreenShot = adb.ScreenshotToBytes()
+	// fmt.Println( "ScreenshotToBytes()" , len( status.ScreenShot ) , "took an extra" , time.Since( start ) )
 	// adb.ScreenshotToFile( "test.png" )
 
 

@@ -1482,6 +1482,11 @@ func ( w *Wrapper ) ScreenshotToFeatures( crop ...int ) ( result []float64 ) {
 	return
 }
 
+func ( w *Wrapper ) ImageBytesToFeatures( image_bytes *[]byte ) ( result []float64 ) {
+	result = image_similarity.GetFeatureVectorPoint( image_bytes )
+	return
+}
+
 func ( w *Wrapper ) ScreenshotToPNG( crop ...int ) ( result image.Image ) {
 	screenshot := w.ScreenshotToBytes( crop... )
 	temp_image_byte_reader := bytes.NewReader( screenshot )
@@ -1492,6 +1497,40 @@ func ( w *Wrapper ) ScreenshotToPNG( crop ...int ) ( result image.Image ) {
 func ( w *Wrapper ) GetPixelColor( x int , y int ) ( result color.RGBA ) {
 	screenshot := w.ScreenshotToPNG()
 	pixel := screenshot.At( x , y )
+	r , g , b , a := pixel.RGBA()
+	result.R = uint8( r )
+	result.G = uint8( g )
+	result.B = uint8( b )
+	result.A = uint8( a )
+	return
+}
+
+func ( w *Wrapper ) ImageBytesToRGBAImage( data *[]byte , width int , height int ) *image.RGBA {
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	idx := 0
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			r := (*data)[idx]
+			g := (*data)[idx+1]
+			b := (*data)[idx+2]
+			a := (*data)[idx+3]
+			img.SetRGBA(x, y, color.RGBA{R: r, G: g, B: b, A: a})
+			idx += 4
+		}
+	}
+	return img
+}
+
+func ( w *Wrapper ) GetPixelColorFromImageBytes( image_bytes *[]byte , x int , y int ) ( result color.RGBA ) {
+	temp_image_byte_reader := bytes.NewReader( *image_bytes )
+	// fmt.Println( len( *image_bytes ) )
+	// ioutil.WriteFile( "test2.png" , *image_bytes , 0644 )
+	x_image , err := png.Decode( temp_image_byte_reader )
+	if err != nil {
+		fmt.Println( err )
+		return
+	}
+	pixel := x_image.At( x , y )
 	r , g , b , a := pixel.RGBA()
 	result.R = uint8( r )
 	result.G = uint8( g )
@@ -1520,6 +1559,22 @@ func ( w *Wrapper ) CurrentScreenSimilarityToReferenceImage( reference_image_pat
 	})
 	return
 }
+
+func ( w *Wrapper ) FeaturesSimilarityToReferenceImage( screen_features *[]float64 , reference_image_path string , crop ...int ) ( distance float64 ) {
+	distance = -1.0
+	try.This(func() {
+		current_screen_features := w.ScreenshotToFeatures( crop... )
+		reference_image_features := image_similarity.GetFeatureVectorFromFilePath( reference_image_path )
+		if len( current_screen_features ) == 0 || len( reference_image_features ) == 0 {
+			return
+		}
+		distance = image_similarity.CalculateDistance( current_screen_features , reference_image_features )
+	}).Catch( func( e try.E ) {
+		fmt.Println( e )
+	})
+	return
+}
+
 
 func ( w *Wrapper ) SimilarityToFeatureList( features []float64 , reference_image_path string ) ( distance float64 ) {
 	try.This(func() {
