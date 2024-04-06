@@ -473,6 +473,68 @@ func ( w *Wrapper ) GetActivity() ( result string ) {
 	return
 }
 
+func ( w *Wrapper ) IsSearchTermOpen( search_string string ) ( result bool ) {
+	search_string_lower := strings.ToLower( search_string )
+	result = false
+	windows := w.GetWindowStack()
+	if len( windows ) < 1 { return }
+	for _ , window := range windows {
+		activity_lower := strings.ToLower( window.Activity )
+		if strings.Contains( activity_lower , search_string_lower ) {
+			result = true
+			break
+		}
+		package_lower := strings.ToLower( window.Package )
+		if strings.Contains( package_lower , search_string_lower ) {
+			result = true
+			break
+		}
+	}
+	playback_positions := w.GetPlaybackPositions()
+	for _ , playback_position := range playback_positions {
+		pack_str_lower := strings.ToLower( playback_position.PackageStr )
+		if strings.Contains( pack_str_lower , search_string_lower ) {
+			result = true
+			break
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) IsSearchTermActivityOpen( search_string string ) ( result bool ) {
+	search_string_lower := strings.ToLower( search_string )
+	result = false
+	windows := w.GetWindowStack()
+	if len( windows ) < 1 { return }
+	for _ , window := range windows {
+		activity_lower := strings.ToLower( window.Activity )
+		if strings.Contains( activity_lower , search_string_lower ) {
+			result = true
+			break
+		}
+		package_lower := strings.ToLower( window.Package )
+		if strings.Contains( package_lower , search_string_lower ) {
+			result = true
+			break
+		}
+	}
+	return
+}
+
+func ( w *Wrapper ) IsSearchTermPlaybackOpen( search_string string ) ( result bool ) {
+	search_string_lower := strings.ToLower( search_string )
+	result = false
+	playback_positions := w.GetPlaybackPositions()
+	for _ , playback_position := range playback_positions {
+		pack_str_lower := strings.ToLower( playback_position.PackageStr )
+		if strings.Contains( pack_str_lower , search_string_lower ) {
+			result = true
+			break
+		}
+	}
+	return
+}
+
 func ( w *Wrapper ) GetPackage() ( result string ) {
 	windows := w.GetWindowStack()
 	if len( windows ) > 0 {

@@ -2,6 +2,7 @@
 
 - apk's === arm-v7a , Android 5.0+
 - https://www.adb-shell.com/android/media.html
+- `sudo dtruss ./bin/darwin/amd64/test &> output.txt`
 
 ## TODO
 
