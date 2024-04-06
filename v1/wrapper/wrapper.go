@@ -1545,6 +1545,18 @@ func ( w *Wrapper ) IsPixelTheSameColor( x int , y int , x_color color.Color ) (
 	return
 }
 
+func ( w *Wrapper ) WaitOnPixelColor( x int , y int , x_color color.Color , timeout time.Duration ) ( result bool ) {
+	start := time.Now()
+	for {
+		if time.Since( start ) > timeout { break }
+		pixel_color := w.GetPixelColor( x , y )
+		result = ( pixel_color == x_color )
+		if result == true { break }
+		time.Sleep( 200 * time.Millisecond )
+	}
+	return
+}
+
 func ( w *Wrapper ) CurrentScreenSimilarityToReferenceImage( reference_image_path string , crop ...int ) ( distance float64 ) {
 	distance = -1.0
 	try.This(func() {

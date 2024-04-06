@@ -5,8 +5,8 @@ import (
 	"time"
 	"strings"
 	// "encoding/json"
-	// color "image/color"
-	image_similarity "github.com/0187773933/ADBWrapper/v1/image-similarity"
+	color "image/color"
+	// image_similarity "github.com/0187773933/ADBWrapper/v1/image-similarity"
 	adb_wrapper "github.com/0187773933/ADBWrapper/v1/wrapper"
 	utils "github.com/0187773933/ADBWrapper/v1/utils"
 )
@@ -235,26 +235,33 @@ func fire_7_tablet_2019_netflix( adb *adb_wrapper.Wrapper ) {
 
 func main() {
 
-	// adb := adb_wrapper.ConnectIP(
-	// 	"/usr/local/bin/adb" ,
-	// 	"192.168.4.193" , // firecube
-	// 	// "192.168.4.56" , // firestick
-	// 	"5555" ,
-	// )
-
-	adb := adb_wrapper.ConnectUSB(
+	adb := adb_wrapper.ConnectIP(
 		"/usr/local/bin/adb" ,
-		"GCC0X8081307034C" , // firetablet
+		"192.168.4.193" , // firecube
+		// "192.168.4.56" , // firestick
+		"5555" ,
 	)
 
-	pss := "/Users/morpheous/WORKSPACE/GO/FireC2Server/SAVE_FILES/screenshots/disney/profile_selection.png"
-	pss_features := image_similarity.GetFeatureVectorFromFilePath( pss )
-	screenshot_bytes := adb.ScreenshotToBytes()
-	screenshot_features := adb.ImageBytesToFeatures( &screenshot_bytes )
-	distance := image_similarity.CalculateDistancePoint( &screenshot_features , &pss_features )
-	utils.PrettyPrint( distance )
-	pixel_color := adb.GetPixelColorFromImageBytes( &screenshot_bytes , 896 , 469 )
-	utils.PrettyPrint( pixel_color )
+	// adb := adb_wrapper.ConnectUSB(
+	// 	"/usr/local/bin/adb" ,
+	// 	"GCC0X8081307034C" , // firetablet
+	// )
+
+	// adb.ScreenshotToFile( "screenshots/hulu.png" )
+	// fmt.Println( "waiting" )
+	// adb.WaitOnPixelColor( 1694 , 96 , color.RGBA{ R: 28 , G: 231 , B: 131 , A: 255 } , 10 * time.Second )
+	// fmt.Println( "done" )
+
+	// adb.WaitOnPixelColor( x int , y int , x_color color.Color , timeout time.Duration )
+
+	// pss := "/Users/morpheous/WORKSPACE/GO/FireC2Server/SAVE_FILES/screenshots/disney/profile_selection.png"
+	// pss_features := image_similarity.GetFeatureVectorFromFilePath( pss )
+	// screenshot_bytes := adb.ScreenshotToBytes()
+	// screenshot_features := adb.ImageBytesToFeatures( &screenshot_bytes )
+	// distance := image_similarity.CalculateDistancePoint( &screenshot_features , &pss_features )
+	// utils.PrettyPrint( distance )
+	// pixel_color := adb.GetPixelColorFromImageBytes( &screenshot_bytes , 896 , 469 )
+	// utils.PrettyPrint( pixel_color )
 
 	// start := time.Now()
 	// status := adb.GetStatus()
