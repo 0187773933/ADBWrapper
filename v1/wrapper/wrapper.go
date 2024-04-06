@@ -1539,6 +1539,32 @@ func ( w *Wrapper ) GetPixelColorFromImageBytes( image_bytes *[]byte , x int , y
 	return
 }
 
+type Coord struct {
+	X int
+	Y int
+}
+
+// type Pixel struct {
+// 	Coord Coord
+// 	Color color.RGBA
+// }
+
+func ( w *Wrapper ) GetPixelColorsFromImageBytes( image_bytes *[]byte , pixels []Coord ) ( result []color.RGBA ) {
+	temp_image_byte_reader := bytes.NewReader( *image_bytes )
+	x_image , err := png.Decode( temp_image_byte_reader )
+	if err != nil {
+		fmt.Println( err )
+		return
+	}
+	for _ , pixel := range pixels {
+		pixel_color := x_image.At( pixel.X , pixel.Y )
+		// https://pkg.go.dev/image/color#Color
+		r , g , b , a := pixel_color.RGBA() // these are unit32 for blending
+		result = append( result , color.RGBA{ R: uint8( r ) , G: uint8( g ) , B: uint8( b ) , A: uint8( a ) } )
+	}
+	return
+}
+
 func ( w *Wrapper ) IsPixelTheSameColor( x int , y int , x_color color.Color ) ( result bool ) {
 	pixel_color := w.GetPixelColor( x , y )
 	result = ( pixel_color == x_color )
