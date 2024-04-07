@@ -1236,6 +1236,10 @@ func ( w *Wrapper ) Tap( x int , y int ) ( result string ) {
 	return
 }
 
+func ( w *Wrapper ) Touch( x int , y int ) ( result string ) {
+	return w.Tap( x , y )
+}
+
 func ( w *Wrapper ) KeyInt( key_number int ) ( result string ) {
 	result = w.Shell( "input" , "keyevent" , strconv.Itoa( key_number ) )
 	return
@@ -1251,7 +1255,7 @@ func ( w *Wrapper ) Sleep() {
 	return
 }
 
-func ( w *Wrapper ) Wakeup() {
+func ( w *Wrapper ) WakeUp() {
 	w.Key( "KEYCODE_WAKEUP"  ) // 224
 	return
 }
