@@ -1452,7 +1452,10 @@ func ( w *Wrapper ) Type( text string ) ( result string ) {
 // https://github.com/imba28/image-similarity/blob/6f921fdf4f5ab8b37d4d563684de99601cc88d5b/pkg/index.go#L10
 // https://github.com/imba28/image-similarity/blob/6f921fdf4f5ab8b37d4d563684de99601cc88d5b/pkg/descriptor.go#L16
 // https://github.com/hybridgroup/gocv/blob/e11806566cdf2482485cc90d92ed320fa920e91a/cmd/img-similarity/main.go#L123
-func ( w *Wrapper ) ScreenshotToFile( save_path string , crop ...int ) ( result string ) {
+func ( w *Wrapper ) ScreenshotToFile( save_path string , crop ...int ) ( result bool ) {
+	result = false
+	parent_dir := filepath.Dir( save_path )
+	os.MkdirAll( parent_dir , 0755 )
 	utils.ExecProcessWithTimeout( ( EXEC_TIMEOUT * time.Millisecond ) , "bash" , "-c" ,
 		fmt.Sprintf( "%s -s %s exec-out screencap -p > %s" , w.ADBPath , w.Serial , save_path ) ,
 	)
@@ -1488,7 +1491,8 @@ func ( w *Wrapper ) ScreenshotToFile( save_path string , crop ...int ) ( result 
 	// 		log.Println("Error:", err)
 	// 	}
 	// }
-	fmt.Println( "Screen Shot Captured" )
+	if previous_size > 0 { result = true }
+	// fmt.Println( "Screen Shot Captured" , previous_size )
 	return
 }
 

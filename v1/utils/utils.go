@@ -61,6 +61,9 @@ func ExecProcessWithTimeout( timeout_duration time.Duration , bash_command strin
 	})
 	command.Wait()
 	// status := command.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+	// fmt.Println( "status" , status )
+	// errb_str := errb.String()
+	// fmt.Println( "errb_str" , errb_str )
 	// fmt.Println( "out:" , outb.String() , "err:" , errb.String() )
 	result = outb.String()
 	return

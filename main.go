@@ -235,23 +235,23 @@ func fire_7_tablet_2019_netflix( adb *adb_wrapper.Wrapper ) {
 
 func main() {
 
-	// adb := adb_wrapper.ConnectIP(
-	// 	"/usr/local/bin/adb" ,
-	// 	"192.168.4.193" , // firecube
-	// 	// "192.168.4.56" , // firestick
-	// 	"5555" ,
-	// )
-
-	adb := adb_wrapper.ConnectUSB(
+	adb := adb_wrapper.ConnectIP(
 		"/usr/local/bin/adb" ,
-		"GCC0X8081307034C" , // firetablet
+		"192.168.4.193" , // firecube
+		// "192.168.4.56" , // firestick
+		"5555" ,
 	)
+
+	// adb := adb_wrapper.ConnectUSB(
+	// 	"/usr/local/bin/adb" ,
+	// 	"GCC0X8081307034C" , // firetablet
+	// )
 
 	// status := adb.GetStatus()
 	// utils.PrettyPrint( status )
-	fmt.Println( adb.IsSearchTermActivityOpen( "ProfileSelection" ) )
+	// fmt.Println( adb.IsSearchTermActivityOpen( "ProfileSelection" ) )
 
-	// adb.ScreenshotToFile( "screenshots/netflix/profile-selection.png" )
+	fmt.Println( adb.ScreenshotToFile( "screenshots/netflix/profile-selection.png" ) )
 	// fmt.Println( "waiting" )
 	// adb.WaitOnPixelColor( 1694 , 96 , color.RGBA{ R: 28 , G: 231 , B: 131 , A: 255 } , 10 * time.Second )
 	// fmt.Println( "done" )
