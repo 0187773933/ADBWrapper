@@ -236,24 +236,39 @@ func ( w *Wrapper ) GetMediaSessionInfo() ( result MediaSession ) {
 			state_line := media_session_dump_lines[ ( line_index + 4 ) ]
 			state_key_values := strings.Split( state_line , "," )
 			state_key_values = utils.RemoveEmpties( state_key_values )
-			state_num := strings.Split( state_key_values[ 0 ] , "state=" )[ 2 ]
-			switch state_num {
-				case "0":
-					result.State = "none"
-				case "1":
-					result.State = "stopped"
-				case "2":
-					result.State = "paused"
-				case "3":
-					result.State = "playing"
+			if len( state_key_values ) < 5 { continue }
+			state_num_parts := strings.Split( state_key_values[ 0 ] , "state=" )
+			if len( state_num_parts ) > 1 {
+				state_num := state_num_parts[ 1 ]
+				switch state_num {
+					case "0":
+						result.State = "none"
+					case "1":
+						result.State = "stopped"
+					case "2":
+						result.State = "paused"
+					case "3":
+						result.State = "playing"
+				}
+			} else {
+				result.State = "unknown"
 			}
-			result.Position = strings.Split( state_key_values[ 1 ] , "position=" )[ 1 ]
-			result.BufferedPosition = strings.Split( state_key_values[ 2 ] , "buffered position=" )[ 1 ]
-			result.Speed = strings.Split( state_key_values[ 3 ] , "speed=" )[ 1 ]
-			result.UpdatedTime = strings.Split( state_key_values[ 4 ] , "updated=" )[ 1 ]
-			description_line := media_session_dump_lines[ ( line_index + 7 ) ]
+			position_parts := strings.Split( state_key_values[ 1 ] , "position=" )
+			if len( position_parts ) > 1 { result.Position = position_parts[ 1 ] }
+			buffered_position_parts := strings.Split( state_key_values[ 2 ] , "buffered position=" )
+			if len( buffered_position_parts ) > 1 { result.BufferedPosition = buffered_position_parts[ 1 ] }
+			speed_parts := strings.Split( state_key_values[ 3 ] , "speed=" )
+			if len( speed_parts ) > 1 { result.Speed = speed_parts[ 1 ] }
+			updated_time_parts := strings.Split( state_key_values[ 4 ] , "updated=" )
+			if len( updated_time_parts ) > 1 { result.UpdatedTime = updated_time_parts[ 1 ] }
+			if len( media_session_dump_lines ) > ( line_index + 6 ) {
+				description_line := media_session_dump_lines[ ( line_index + 7 ) ]
+				description_parts := strings.Split( description_line , "description=" )
+				if len( description_parts ) > 1 {
+					result.Description = description_parts[ 1 ]
+				}
+			}
 			// description_line_items := strings.Split( description_line , "=" )
-			result.Description = strings.Split( description_line , "description=" )[ 1 ]
 		}
 	}
 	return

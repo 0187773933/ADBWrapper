@@ -242,6 +242,9 @@ func main() {
 		"5555" ,
 	)
 
+	x := adb.GetMediaSessionInfo()
+	utils.PrettyPrint( x )
+
 	// adb := adb_wrapper.ConnectUSB(
 	// 	"/usr/local/bin/adb" ,
 	// 	"GCC0X8081307034C" , // firetablet
@@ -251,8 +254,9 @@ func main() {
 	// utils.PrettyPrint( status )
 	// fmt.Println( adb.IsSearchTermActivityOpen( "ProfileSelection" ) )
 
-	fmt.Println( adb.ScreenshotToFile( "screenshots/netflix/profile-selection.png" ) )
-	// fmt.Println( "waiting" )
+	// adb.ScreenshotToFile( "screenshots/spotify/shuffle-smart.png" )
+	// x_bytes := adb.ScreenshotToBytes()
+	// fmt.Println( len( x_bytes ) )
 	// adb.WaitOnPixelColor( 1694 , 96 , color.RGBA{ R: 28 , G: 231 , B: 131 , A: 255 } , 10 * time.Second )
 	// fmt.Println( "done" )
 
